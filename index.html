@@ -105,6 +105,7 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
 #tabs{position:relative;z-index:2;display:flex;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:4px;width:min(370px,94vw);}
 .tab{flex:1;padding:12px 6px;border-radius:13px;font-family:'Black Ops One',monospace;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,.3);background:transparent;border:none;cursor:pointer;transition:all .2s;}
 .tab.active{background:rgba(255,255,255,.08);color:#fff;}
+.tab-settings-btn{font-size:22px !important;filter:drop-shadow(0 0 6px rgba(255,255,255,0.55));color:rgba(255,255,255,0.85) !important;}
 .tab-pane{display:none;flex-direction:column;align-items:center;gap:10px;width:min(370px,94vw);position:relative;z-index:2;}
 .tab-pane.active{display:flex;}
 
@@ -271,6 +272,28 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
 .gbtn-dis{background:rgba(255,255,255,.03)!important;color:rgba(255,255,255,.1)!important;box-shadow:none!important;border:1px solid rgba(255,255,255,.04)!important;cursor:default!important;}
 .gbtn-dis::before{display:none!important;}
 
+/* ── LUCKY SPIN ── */
+#spin-modal{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;}
+#spin-modal.on{opacity:1;pointer-events:all;}
+#spin-box{width:min(340px,92vw);background:linear-gradient(145deg,#0a0a18,#0d0d20);border:1px solid rgba(255,222,3,.25);border-radius:26px;padding:22px 18px 24px;text-align:center;position:relative;overflow:hidden;}
+#spin-box::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--c3),var(--c2),var(--c1),transparent);}
+.spin-title{font-family:'Black Ops One',monospace;font-size:22px;letter-spacing:5px;background:linear-gradient(135deg,var(--c3),var(--c2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;}
+.spin-sub{font-size:12px;letter-spacing:3px;color:rgba(255,255,255,.25);margin-bottom:16px;}
+#spin-wheel-wrap{position:relative;width:240px;height:240px;margin:0 auto 16px;}
+#spin-canvas{border-radius:50%;display:block;}
+#spin-arrow{position:absolute;top:-10px;left:50%;transform:translateX(-50%);font-size:28px;filter:drop-shadow(0 0 10px rgba(255,222,3,0.9));z-index:2;pointer-events:none;}
+#spin-result{min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;margin-bottom:14px;}
+#spin-result-ico{font-size:38px;display:none;}
+#spin-result-txt{font-family:'Black Ops One',monospace;font-size:18px;letter-spacing:3px;color:var(--c3);display:none;}
+#spin-timer{font-size:12px;letter-spacing:2px;color:rgba(255,222,3,.4);margin-bottom:14px;}
+.spin-btns{display:flex;flex-direction:column;gap:8px;}
+#btn-spin-free{background:linear-gradient(135deg,var(--c3),#ff8800);color:#000;font-family:'Black Ops One',monospace;font-size:15px;letter-spacing:3px;padding:15px;border-radius:14px;border:none;cursor:pointer;transition:transform .1s;}
+#btn-spin-free:active{transform:scale(.95);}
+#btn-spin-free:disabled{background:rgba(255,255,255,.06);color:rgba(255,255,255,.2);cursor:default;}
+#btn-spin-paid{background:rgba(255,255,255,.04);color:rgba(255,255,255,.45);font-family:'Black Ops One',monospace;font-size:13px;letter-spacing:2px;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,.08);cursor:pointer;transition:transform .1s;}
+#btn-spin-paid:active{transform:scale(.95);}
+#btn-spin-close{background:transparent;color:rgba(255,255,255,.2);font-family:'Black Ops One',monospace;font-size:11px;letter-spacing:2px;padding:10px;border-radius:14px;border:none;cursor:pointer;margin-top:2px;}
+
 /* ── INTERSTITIAL ── */
 #inter{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.97);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;}
 #inter.on{opacity:1;pointer-events:all;}
@@ -384,7 +407,7 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
     <button class="tab" onclick="showTab('worlds')">🌍</button>
     <button class="tab" onclick="showTab('lb')">🏆</button>
     <button class="tab" onclick="showTab('shop')">🛒</button>
-    <button class="tab" onclick="showTab('settings')">⚙️</button>
+    <button class="tab tab-settings-btn" onclick="showTab('settings')">⚙️</button>
   </div>
 
   <!-- ═══ PLAY TAB ═══ -->
@@ -483,6 +506,15 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
         <span id="coins-val-shop" style="font-family:'Black Ops One',monospace;font-size:16px;color:var(--c3);">0</span>
       </div>
     </div>
+    <!-- Lucky Spin Button -->
+    <div id="spin-entry" style="width:100%;background:linear-gradient(135deg,rgba(255,222,3,.1),rgba(255,60,172,.06));border:1px solid rgba(255,222,3,.3);border-radius:18px;padding:14px 16px;display:flex;align-items:center;gap:13px;cursor:pointer;position:relative;overflow:hidden;" onclick="openSpin()">
+      <div style="font-size:38px;animation:spinFloat 2s ease-in-out infinite;">🎰</div>
+      <div style="flex:1;">
+        <div style="font-family:'Black Ops One',monospace;font-size:15px;letter-spacing:3px;color:var(--c3);">LUCKY SPIN</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.3);margin-top:3px;">Free spin every 24h · Paid for 30🪙</div>
+      </div>
+      <div id="spin-entry-badge" style="font-size:11px;letter-spacing:2px;font-family:'Black Ops One',monospace;padding:5px 10px;border-radius:10px;background:rgba(255,222,3,.15);color:var(--c3);border:1px solid rgba(255,222,3,.25);">FREE!</div>
+    </div>
     <div id="shop-wrap"></div>
   </div>
 
@@ -496,9 +528,50 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
       <div class="srow"><div class="srow-lbl"><span class="srow-ico">🪙</span>Coins</div><div style="font-family:'Black Ops One',monospace;font-size:24px;color:var(--c3);" id="set-coins">0</div></div>
       <div class="srow" style="cursor:pointer;" onclick="resetBest()"><div class="srow-lbl"><span class="srow-ico">🗑️</span>Reset Best</div><span style="font-size:22px;opacity:.4">›</span></div>
     </div>
+
+    <!-- Contact Us -->
+    <div style="width:100%;background:rgba(255,255,255,.02);border:1px solid rgba(0,255,204,.12);border-radius:18px;overflow:hidden;position:relative;margin-top:4px;">
+      <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--c1),transparent);"></div>
+      <div style="padding:14px 16px;">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;">
+          <span style="font-size:22px;">📩</span>
+          <div style="font-family:'Black Ops One',monospace;font-size:14px;letter-spacing:3px;color:rgba(0,255,204,.8);">CONTACT US</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <input id="contact-name" type="text" placeholder="Your Name" style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:11px;padding:12px 14px;color:#fff;font-family:'Exo 2',sans-serif;font-size:14px;outline:none;"/>
+          <input id="contact-email" type="email" placeholder="Your Email (optional)" style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:11px;padding:12px 14px;color:#fff;font-family:'Exo 2',sans-serif;font-size:14px;outline:none;"/>
+          <textarea id="contact-msg" placeholder="Your message…" rows="4" style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:11px;padding:12px 14px;color:#fff;font-family:'Exo 2',sans-serif;font-size:14px;outline:none;resize:none;"></textarea>
+          <button onclick="sendContact()" style="width:100%;background:linear-gradient(135deg,#00ddaa,#0099cc);color:#000;font-family:'Black Ops One',monospace;font-size:14px;letter-spacing:3px;padding:14px;border-radius:12px;border:none;cursor:pointer;transition:transform .1s;" onmousedown="this.style.transform='scale(.96)'" onmouseup="this.style.transform='scale(1)'">📨 SEND MESSAGE</button>
+          <div id="contact-status" style="text-align:center;font-size:12px;letter-spacing:2px;min-height:18px;color:rgba(0,255,204,.6);"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
 </div><!-- end #ov -->
+
+<!-- ═══ LUCKY SPIN MODAL ═══ -->
+<div id="spin-modal">
+  <div id="spin-box">
+    <div class="spin-title">🎰 LUCKY SPIN</div>
+    <div class="spin-sub">WATCH AD — SPIN THE WHEEL!</div>
+    <div id="spin-dots" style="display:flex;justify-content:center;gap:8px;margin-bottom:14px;"></div>
+    <div id="spin-wheel-wrap">
+      <div id="spin-arrow">▼</div>
+      <canvas id="spin-canvas" width="240" height="240"></canvas>
+    </div>
+    <div id="spin-result">
+      <div id="spin-result-ico"></div>
+      <div id="spin-result-txt"></div>
+    </div>
+    <div id="spin-timer"></div>
+    <div class="spin-btns">
+      <button id="btn-spin-free" onclick="doSpin(false)">🎰 WATCH AD & SPIN!</button>
+      <button id="btn-spin-paid" onclick="doSpin(true)">▶ WATCH AD — GET +1 SPIN</button>
+      <button id="btn-spin-close" onclick="closeSpin()">✕ CLOSE</button>
+    </div>
+  </div>
+</div>
 
 <!-- ═══ INTERSTITIAL AD ═══ -->
 <div id="inter">
@@ -902,7 +975,7 @@ const Coins = {
   get()     { return parseInt(localStorage.getItem('coins') || '0'); },
   add(n)    { localStorage.setItem('coins', this.get() + n); this.updUI(); showCoinPopup(n); },
   spend(n)  { const c = this.get(); if (c < n) return false; localStorage.setItem('coins', c - n); this.updUI(); return true; },
-  updUI()   { const el = document.getElementById('coins-val'); if (el) el.textContent = this.get(); },
+  updUI()   { const v = this.get(); ['coins-val','coins-val-shop'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = v; }); const se = document.getElementById('set-coins'); if(se) se.textContent = v; },
 };
 
 // ── SKINS ─────────────────────────────────
@@ -1208,6 +1281,340 @@ function buildLeaderboard() {
 }
 
 
+// ── LUCKY SPIN ────────────────────────────
+const SPIN_PRIZES = [
+  { ico:'🪙', label:'10 COINS',   type:'coins',  val:10,  color:'#ffde03', weight:25 },
+  { ico:'🪙', label:'25 COINS',   type:'coins',  val:25,  color:'#ff8800', weight:18 },
+  { ico:'🪙', label:'50 COINS',   type:'coins',  val:50,  color:'#ff4400', weight:10 },
+  { ico:'⏱️', label:'SLOW MO',    type:'pu',     val:'slow',  color:'#00ffcc', weight:15 },
+  { ico:'📏', label:'WIDER',      type:'pu',     val:'wide',  color:'#3d9fff', weight:15 },
+  { ico:'🛡️', label:'SHIELD',     type:'pu',     val:'shield',color:'#a259ff', weight:10 },
+  { ico:'×2', label:'2X SCORE',   type:'pu',     val:'x2',    color:'#ff3cac', weight:5  },
+  { ico:'🪙', label:'100 COINS',  type:'coins',  val:100, color:'#ffffff', weight:2  },
+];
+
+const LuckySpin = {
+  MAX_SPINS: 5,
+  REFILL_MS: 2 * 60 * 60 * 1000,
+
+  getSpins() {
+    return parseInt(localStorage.getItem('spin_count') ?? String(this.MAX_SPINS));
+  },
+
+  setSpins(n) {
+    localStorage.setItem('spin_count', String(Math.min(this.MAX_SPINS, Math.max(0, n))));
+  },
+
+  getLastUsed() {
+    return parseInt(localStorage.getItem('spin_last_used') || '0');
+  },
+
+  refill() {
+    const spins = this.getSpins();
+    if (spins >= this.MAX_SPINS) return;
+    const last = this.getLastUsed();
+    if (!last) return;
+    const elapsed = Date.now() - last;
+    const gained = Math.floor(elapsed / this.REFILL_MS);
+    if (gained > 0) {
+      this.setSpins(spins + gained);
+      localStorage.setItem('spin_last_used', String(last + gained * this.REFILL_MS));
+    }
+  },
+
+  canSpin() {
+    this.refill();
+    return this.getSpins() > 0;
+  },
+
+  useOneSpin() {
+    this.refill();
+    const s = this.getSpins();
+    if (s <= 0) return false;
+    const wasMax = s >= this.MAX_SPINS;
+    this.setSpins(s - 1);
+    if (wasMax) localStorage.setItem('spin_last_used', String(Date.now()));
+    return true;
+  },
+
+  nextRefillIn() {
+    this.refill();
+    if (this.getSpins() >= this.MAX_SPINS) return null;
+    const last = this.getLastUsed();
+    if (!last) return null;
+    const elapsed = Date.now() - last;
+    const nextIn = this.REFILL_MS - (elapsed % this.REFILL_MS);
+    const m = Math.floor(nextIn / 60000);
+    const s = Math.floor((nextIn % 60000) / 1000);
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  },
+
+  pickPrize() {
+    const total = SPIN_PRIZES.reduce((a, p) => a + p.weight, 0);
+    let r = Math.random() * total;
+    for (const p of SPIN_PRIZES) { r -= p.weight; if (r <= 0) return p; }
+    return SPIN_PRIZES[0];
+  },
+
+  applyPrize(prize) {
+    if (prize.type === 'coins') {
+      Coins.add(prize.val);
+    } else if (prize.type === 'pu') {
+      const stock = parseInt(localStorage.getItem('pu_stock_' + prize.val) || '0');
+      localStorage.setItem('pu_stock_' + prize.val, String(stock + 1));
+    }
+  },
+};
+
+let _spinRunning = false;
+let _spinTimerIv = null;
+
+function drawSpinWheel(rotation) {
+  const cv = document.getElementById('spin-canvas');
+  if (!cv) return;
+  const ctx2 = cv.getContext('2d');
+  const cx = 120, cy = 120, R = 110, N = SPIN_PRIZES.length;
+  const arc = (Math.PI * 2) / N;
+  ctx2.clearRect(0, 0, 240, 240);
+
+  // Outer glow ring
+  ctx2.save();
+  ctx2.beginPath();
+  ctx2.arc(cx, cy, R + 4, 0, Math.PI * 2);
+  ctx2.strokeStyle = 'rgba(255,222,3,0.35)';
+  ctx2.lineWidth = 3;
+  ctx2.stroke();
+  ctx2.restore();
+
+  SPIN_PRIZES.forEach((p, i) => {
+    const start = rotation + i * arc;
+    const end = start + arc;
+
+    // Segment fill
+    ctx2.save();
+    ctx2.beginPath();
+    ctx2.moveTo(cx, cy);
+    ctx2.arc(cx, cy, R, start, end);
+    ctx2.closePath();
+    // Alternating shade
+    const alpha = i % 2 === 0 ? '0.18' : '0.10';
+    ctx2.fillStyle = p.color + (i % 2 === 0 ? '44' : '22');
+    ctx2.fill();
+    ctx2.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx2.lineWidth = 1;
+    ctx2.stroke();
+    ctx2.restore();
+
+    // Icon
+    const midAngle = rotation + i * arc + arc / 2;
+    const tx = cx + Math.cos(midAngle) * R * 0.68;
+    const ty = cy + Math.sin(midAngle) * R * 0.68;
+    ctx2.save();
+    ctx2.font = '18px serif';
+    ctx2.textAlign = 'center';
+    ctx2.textBaseline = 'middle';
+    ctx2.fillText(p.ico, tx, ty);
+    ctx2.restore();
+
+    // Label
+    const lx = cx + Math.cos(midAngle) * R * 0.38;
+    const ly = cy + Math.sin(midAngle) * R * 0.38;
+    ctx2.save();
+    ctx2.translate(lx, ly);
+    ctx2.rotate(midAngle + Math.PI / 2);
+    ctx2.font = 'bold 8px "Exo 2", sans-serif';
+    ctx2.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx2.textAlign = 'center';
+    ctx2.textBaseline = 'middle';
+    ctx2.fillText(p.label, 0, 0);
+    ctx2.restore();
+  });
+
+  // Center circle
+  ctx2.save();
+  const grad = ctx2.createRadialGradient(cx, cy, 0, cx, cy, 24);
+  grad.addColorStop(0, '#1a1a2e');
+  grad.addColorStop(1, '#0a0a18');
+  ctx2.beginPath();
+  ctx2.arc(cx, cy, 22, 0, Math.PI * 2);
+  ctx2.fillStyle = grad;
+  ctx2.fill();
+  ctx2.strokeStyle = 'rgba(255,222,3,0.4)';
+  ctx2.lineWidth = 2;
+  ctx2.stroke();
+  ctx2.font = 'bold 16px serif';
+  ctx2.textAlign = 'center';
+  ctx2.textBaseline = 'middle';
+  ctx2.fillText('🎰', cx, cy);
+  ctx2.restore();
+}
+
+function updateSpinButtons() {
+  LuckySpin.refill();
+  const spins   = LuckySpin.getSpins();
+  const canSpin = spins > 0;
+  const freeBtn = document.getElementById('btn-spin-free');
+  const paidBtn = document.getElementById('btn-spin-paid');
+  const badge   = document.getElementById('spin-entry-badge');
+  const dotsEl  = document.getElementById('spin-dots');
+
+  if (freeBtn) {
+    freeBtn.disabled = _spinRunning || !canSpin;
+    freeBtn.textContent = canSpin
+      ? `🎰 SPIN! (${spins} left)`
+      : '⏳ NO SPINS LEFT';
+  }
+  if (paidBtn) {
+    paidBtn.disabled = _spinRunning || spins >= LuckySpin.MAX_SPINS;
+    paidBtn.textContent = spins >= LuckySpin.MAX_SPINS
+      ? '✅ SPINS FULL'
+      : '▶ WATCH AD — GET +1 SPIN';
+  }
+  if (badge) {
+    badge.textContent = `${spins}/${LuckySpin.MAX_SPINS} 🎰`;
+    badge.style.background = spins > 0 ? 'rgba(255,222,3,.15)' : 'rgba(255,255,255,.05)';
+    badge.style.color = spins > 0 ? 'var(--c3)' : 'rgba(255,255,255,.3)';
+  }
+  // Render dot indicators
+  if (dotsEl) {
+    dotsEl.innerHTML = Array.from({length: LuckySpin.MAX_SPINS}, (_, i) =>
+      `<div style="width:10px;height:10px;border-radius:50%;background:${i < spins ? 'var(--c3)' : 'rgba(255,255,255,.1)'};box-shadow:${i < spins ? '0 0 6px rgba(255,222,3,.6)' : 'none'};transition:all .3s;"></div>`
+    ).join('');
+  }
+}
+
+function updateSpinTimer() {
+  const timerEl = document.getElementById('spin-timer');
+  if (!timerEl) return;
+  if (_spinTimerIv) clearInterval(_spinTimerIv);
+  function tick() {
+    LuckySpin.refill();
+    const spins = LuckySpin.getSpins();
+    const t = LuckySpin.nextRefillIn();
+    if (spins >= LuckySpin.MAX_SPINS) {
+      timerEl.textContent = '✅ Spins full — come back later!';
+    } else if (t) {
+      timerEl.textContent = `+1 spin in: ${t}`;
+    } else {
+      timerEl.textContent = '';
+    }
+    updateSpinButtons();
+  }
+  tick(); _spinTimerIv = setInterval(tick, 1000);
+}
+
+function openSpin() {
+  const modal = document.getElementById('spin-modal');
+  modal.classList.add('on');
+  document.getElementById('spin-result-ico').style.display = 'none';
+  document.getElementById('spin-result-txt').style.display = 'none';
+  updateSpinButtons();
+  updateSpinTimer();
+  drawSpinWheel(0);
+}
+
+function closeSpin() {
+  document.getElementById('spin-modal').classList.remove('on');
+  if (_spinTimerIv) { clearInterval(_spinTimerIv); _spinTimerIv = null; }
+}
+
+function doSpin(watchAdForRefill) {
+  if (_spinRunning) return;
+
+  if (watchAdForRefill) {
+    // Watch ad to get +1 spin
+    if (LuckySpin.getSpins() >= LuckySpin.MAX_SPINS) return;
+    const paidBtn = document.getElementById('btn-spin-paid');
+    if (paidBtn) { paidBtn.disabled = true; paidBtn.textContent = '⏳ Loading ad…'; }
+    _mockSpinAd(() => {
+      LuckySpin.setSpins(LuckySpin.getSpins() + 1);
+      updateSpinButtons();
+      updateSpinTimer();
+      const timerEl = document.getElementById('spin-timer');
+      if (timerEl) timerEl.textContent = '✅ +1 Spin added!';
+    });
+    return;
+  }
+
+  // Normal spin — uses 1 charge, shows ad first
+  if (!LuckySpin.canSpin()) return;
+
+  const freeBtn = document.getElementById('btn-spin-free');
+  if (freeBtn) { freeBtn.disabled = true; freeBtn.textContent = '⏳ Loading ad…'; }
+
+  _mockSpinAd(() => {
+    // Ad watched — deduct spin & spin
+    if (!LuckySpin.useOneSpin()) {
+      updateSpinButtons();
+      return;
+    }
+    updateSpinButtons();
+    _spinRunning = true;
+
+    const prize = LuckySpin.pickPrize();
+    const prizeIdx = SPIN_PRIZES.indexOf(prize);
+    const N = SPIN_PRIZES.length;
+    const arc = (Math.PI * 2) / N;
+    const spins = 5 + Math.floor(Math.random() * 4);
+    const targetSegAngle = -(prizeIdx * arc + arc / 2) - Math.PI / 2;
+    const totalAngle = spins * Math.PI * 2 + ((targetSegAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+    const duration = 3500 + Math.random() * 1000;
+    const startTime = performance.now();
+    function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+
+    // Reset result
+    document.getElementById('spin-result-ico').style.display = 'none';
+    document.getElementById('spin-result-txt').style.display = 'none';
+
+    function animate(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      drawSpinWheel(totalAngle * easeOut(progress));
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        _spinRunning = false;
+        LuckySpin.applyPrize(prize);
+        const icoEl = document.getElementById('spin-result-ico');
+        const txtEl = document.getElementById('spin-result-txt');
+        icoEl.textContent = prize.ico;
+        txtEl.textContent = '+ ' + prize.label + '!';
+        icoEl.style.display = 'block';
+        txtEl.style.display = 'block';
+        icoEl.style.animation = 'starPop .4s cubic-bezier(.23,1.4,.4,1) both';
+        txtEl.style.color = prize.color;
+        SFX.newbest && SFX.newbest();
+        Haptic.newbest && Haptic.newbest();
+        screenFlash(prize.color + '33');
+        updateSpinButtons();
+        updateSpinTimer();
+        buildShop();
+      }
+    }
+    requestAnimationFrame(animate);
+  });
+}
+
+// Ad simulation for spin (independent from reward card adbar)
+function _mockSpinAd(cb) {
+  const freeBtn = document.getElementById('btn-spin-free');
+  const paidBtn = document.getElementById('btn-spin-paid');
+  const timerEl = document.getElementById('spin-timer');
+  if (timerEl) timerEl.textContent = '📺 Ad playing… 5s';
+  let t = 5;
+  const iv = setInterval(() => {
+    t--;
+    if (timerEl) timerEl.textContent = t > 0 ? `📺 Ad playing… ${t}s` : '✅ Done!';
+    if (t <= 0) { clearInterval(iv); setTimeout(() => { cb && cb(); updateSpinTimer(); }, 300); }
+  }, 1000);
+}
+(function(){
+  const s = document.createElement('style');
+  s.textContent = '@keyframes spinFloat{0%,100%{transform:translateY(0) rotate(-5deg);}50%{transform:translateY(-6px) rotate(5deg);}}';
+  document.head.appendChild(s);
+})();
+
+
 // ═══ GAME ═══
 /* ═══════════════════════════════════════════
    STACK! Tower Rush — Core Game Engine
@@ -1230,6 +1637,28 @@ function resetBest() {
   localStorage.setItem('stack_best', '0');
   GS.best = 0; updHUD();
   document.getElementById('set-best').textContent = '0';
+}
+
+function sendContact() {
+  const name = (document.getElementById('contact-name').value || '').trim();
+  const email = (document.getElementById('contact-email').value || '').trim();
+  const msg  = (document.getElementById('contact-msg').value || '').trim();
+  const status = document.getElementById('contact-status');
+  if (!name || !msg) { status.style.color = '#ff3cac'; status.textContent = '❌ Please enter your name and message.'; return; }
+  const subject = encodeURIComponent('STACK! Tower Rush — Message from ' + name);
+  const body = encodeURIComponent(
+    'Name: ' + name + '\n' +
+    (email ? 'Email: ' + email + '\n' : '') +
+    '\nMessage:\n' + msg
+  );
+  window.location.href = 'mailto:montecarlo.news24@gmail.com?subject=' + subject + '&body=' + body;
+  status.style.color = 'rgba(0,255,204,.7)';
+  status.textContent = '✅ Opening your email app…';
+  setTimeout(() => {
+    document.getElementById('contact-name').value = '';
+    document.getElementById('contact-email').value = '';
+    document.getElementById('contact-msg').value = '';
+  }, 1500);
 }
 
 // ── ADMOB ─────────────────────────────────
