@@ -456,6 +456,7 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
     <!-- Buttons -->
     <div class="bstack">
       <button class="gbtn gbtn-main" id="btn-main">▶ PLAY</button>
+      <button class="gbtn" id="btn-continue" style="display:none;background:linear-gradient(135deg,#00cc88,#0088ff);color:#000;font-size:18px;box-shadow:0 0 28px rgba(0,204,136,0.5),0 8px 24px rgba(0,0,0,0.5);">▶ CONTINUE GAME</button>
       <button class="gbtn gbtn-yellow" id="btn-one-more" style="display:none;">🔥 ONE MORE GAME!</button>
       <button class="gbtn gbtn-ghost" id="btn-skip" style="display:none;">↪ Skip — No reward</button>
     </div>
@@ -1807,6 +1808,7 @@ document.getElementById('btn-world-play').addEventListener('click', () => { GS.w
 document.getElementById('btn-ad').addEventListener('click', () => {
   if (GS.rewardUsed) return; GS.rewardUsed = true;
   AdMob.rewarded(() => {
+    // Double score
     GS.score *= 2;
     if (GS.score > GS.best) { GS.best = GS.score; localStorage.setItem('stack_best', GS.best); }
     document.getElementById('rc-score').textContent = GS.score;
@@ -1818,7 +1820,22 @@ document.getElementById('btn-ad').addEventListener('click', () => {
     document.getElementById('adbar').style.display = 'none';
     saveGlobalScore(GS.score, cw().name, cw().emoji);
     buildLeaderboard();
+    // Show CONTINUE button
+    document.getElementById('btn-continue').style.display = 'flex';
+    document.getElementById('btn-one-more').style.display = 'none';
   });
+});
+
+// CONTINUE — resume from where player stopped
+document.getElementById('btn-continue').addEventListener('click', () => {
+  document.getElementById('rc').style.display = 'none';
+  document.getElementById('rw').style.display = 'none';
+  document.getElementById('btn-continue').style.display = 'none';
+  document.getElementById('btn-skip').style.display = 'none';
+  document.getElementById('btn-one-more').style.display = 'none';
+  document.getElementById('logo').style.display = 'block';
+  // Resume without resetting blocks/score
+  initGame(false);
 });
 
 // ── INPUT ─────────────────────────────────
