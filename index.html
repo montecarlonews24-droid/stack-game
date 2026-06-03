@@ -1411,50 +1411,6 @@ const Tournament = {
   },
 };
 
-// ── GLOBAL LEADERBOARD ────────────────────
-function saveGlobalScore(score, worldName, worldEmoji) {
-  const lb = JSON.parse(localStorage.getItem('lb') || '[]');
-  lb.push({ name: 'YOU', score, world: worldName, emoji: worldEmoji, you: true });
-  lb.sort((a, b) => b.score - a.score);
-  lb.splice(10);
-  localStorage.setItem('lb', JSON.stringify(lb));
-}
-
-function buildLeaderboard() {
-  const lb = JSON.parse(localStorage.getItem('lb') || '[]');
-  const fakes = [
-    { name:'GHOST', score:142, world:'VOLCANO', emoji:'🌋' },
-    { name:'NOVA',  score:118, world:'CRYSTAL', emoji:'💎' },
-    { name:'BLAZE', score:97,  world:'SPACE',   emoji:'🌌' },
-    { name:'NEON',  score:85,  world:'CYBER',   emoji:'⚡' },
-    { name:'ACE',   score:73,  world:'CYBER',   emoji:'⚡' },
-    { name:'ZEN',   score:61,  world:'SPACE',   emoji:'🌌' },
-    { name:'MAX',   score:44,  world:'CYBER',   emoji:'⚡' },
-    { name:'KAI',   score:32,  world:'CYBER',   emoji:'⚡' },
-  ];
-  const merged = [...lb, ...fakes.filter(f => !lb.find(r => r.name === f.name))];
-  merged.sort((a, b) => b.score - a.score);
-  const wrap = document.getElementById('lb-wrap');
-  if (!wrap) return;
-  wrap.innerHTML = '<div class="lb-title">🏆 TOP PLAYERS</div>';
-  merged.slice(0, 10).forEach((r, i) => {
-    const rc = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
-    const ri = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1;
-    const wDot = (BASE_WORLDS.find(w => w.name === r.world) || {}).dot || '#333';
-    const el = document.createElement('div');
-    el.className = 'lb-row' + (r.you ? ' you' : '');
-    el.innerHTML = `
-      <div class="lb-rank ${rc}">${ri}</div>
-      <div class="lb-avatar" style="background:${wDot}22;border-color:${wDot}44;">${r.emoji}</div>
-      <div class="lb-info">
-        <div class="lb-name">${r.name}${r.you?' <span style="color:var(--c1);font-size:11px">(YOU)</span>':''}</div>
-        <div class="lb-world">${r.world}</div>
-      </div>
-      <div class="lb-score">${r.score}</div>`;
-    wrap.appendChild(el);
-  });
-}
-
 
 // ── LUCKY SPIN ────────────────────────────
 const SPIN_PRIZES = [
@@ -2661,57 +2617,48 @@ function showLevelUp(lv) {
   setTimeout(() => pop.classList.remove('show'), 2800);
 }
 
-// ═══ FIREBASE LEADERBOARD ═══
-// Firebase config — يمكنك استبداله بمشروعك الخاص
-const FB_CONFIG = {
-  apiKey: "AIzaSyDEMO_REPLACE_WITH_YOUR_KEY",
-  databaseURL: "https://stack-tower-rush-default-rtdb.firebaseio.com",
-};
+// ═══ FIREBASE REALTIME DATABASE LEADERBOARD ═══
+const FB = {
+  DB: 'https://stack-tower-rush-default-rtdb.firebaseio.com',
+  API_KEY: 'AIzaSyCkaDdDCK2RELo5LahkeCsAx62zV_8smvs',
 
-// استخدام jsonbin.io كبديل مجاني بدون تسجيل Firebase
-// يمكنك استبداله بـ Firebase لاحقاً
-const LB_API = {
-  BIN_ID: null, // سيُنشأ تلقائياً عند أول استخدام
-  API_KEY: '$2a$10$DEMO_REPLACE_WITH_JSONBIN_KEY',
-  BASE: 'https://api.jsonbin.io/v3',
-
-  async getPlayerName() {
-    return localStorage.getItem('player_name') || 'PLAYER';
-  },
-
-  // الواجهة الاحتياطية: localStorage + fake global scores
+  // جلب أعلى 20 نتيجة مرتبة تنازلياً
   async fetchScores() {
-    const local = JSON.parse(localStorage.getItem('lb_global') || '[]');
-    const fakes = [
-      { name:'GHOST',  score:142, world:'VOLCANO', emoji:'🌋', lv:8 },
-      { name:'NOVA',   score:118, world:'CRYSTAL', emoji:'💎', lv:6 },
-      { name:'BLAZE',  score:97,  world:'SPACE',   emoji:'🌌', lv:5 },
-      { name:'NEON',   score:85,  world:'CYBER',   emoji:'⚡', lv:4 },
-      { name:'ACE',    score:73,  world:'CYBER',   emoji:'⚡', lv:4 },
-      { name:'ZEN',    score:61,  world:'SPACE',   emoji:'🌌', lv:3 },
-      { name:'MAX',    score:44,  world:'CYBER',   emoji:'⚡', lv:2 },
-      { name:'KAI',    score:32,  world:'CYBER',   emoji:'⚡', lv:2 },
-    ];
-    const merged = [...local, ...fakes.filter(f => !local.find(r => r.name === f.name))];
-    merged.sort((a, b) => b.score - a.score);
-    return merged.slice(0, 20);
+    try {
+      const url = `${this.DB}/leaderboard.json?orderBy="score"&limitToLast=20&auth=${this.API_KEY}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('fetch failed');
+      const data = await res.json();
+      if (!data) return [];
+      // تحويل object إلى array ومرتبة تنازلياً
+      const arr = Object.values(data).sort((a, b) => b.score - a.score);
+      return arr;
+    } catch(e) {
+      console.warn('[Firebase] fetchScores error:', e);
+      return [];
+    }
   },
 
-  async submitScore(score, worldName, worldEmoji) {
-    const name = await this.getPlayerName();
-    const lv = LevelSys.getCurrentLevel().lv;
-    const lb = JSON.parse(localStorage.getItem('lb_global') || '[]');
-    const existing = lb.findIndex(r => r.name === name && r.you);
-    const entry = { name, score, world: worldName, emoji: worldEmoji, lv, you: true, ts: Date.now() };
-    if (existing >= 0) {
-      if (score > lb[existing].score) lb[existing] = entry;
-    } else {
-      lb.push(entry);
+  // رفع أو تحديث نتيجة اللاعب
+  async submitScore(name, score, worldName, worldEmoji, lv) {
+    try {
+      // استخدام اسم اللاعب كـ key حتى لا يتكرر
+      const key = name.replace(/[^A-Z0-9_]/g, '_');
+      // نجلب النتيجة الحالية أولاً
+      const getUrl = `${this.DB}/leaderboard/${key}.json?auth=${this.API_KEY}`;
+      const getRes = await fetch(getUrl);
+      const existing = getRes.ok ? await getRes.json() : null;
+      // نرفع فقط إذا كانت النتيجة الجديدة أعلى
+      if (existing && existing.score >= score) return;
+      const entry = { name, score, world: worldName, emoji: worldEmoji, lv, ts: Date.now() };
+      await fetch(getUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry)
+      });
+    } catch(e) {
+      console.warn('[Firebase] submitScore error:', e);
     }
-    lb.sort((a, b) => b.score - a.score);
-    lb.splice(20);
-    localStorage.setItem('lb_global', JSON.stringify(lb));
-    return lb;
   },
 };
 
@@ -2732,30 +2679,37 @@ async function buildLeaderboard() {
   const loading = document.getElementById('lb-loading');
   if (!wrap) return;
 
-  // Pre-fill name input if saved
-  const savedName = localStorage.getItem('player_name');
+  // أعد تعبئة الاسم المحفوظ
+  const savedName = localStorage.getItem('player_name') || '';
   const nameInput = document.getElementById('lb-name-input');
   if (nameInput && savedName) nameInput.value = savedName;
 
   if (loading) loading.style.display = 'block';
   wrap.innerHTML = '';
 
-  const scores = await LB_API.fetchScores();
+  const scores = await FB.fetchScores();
   if (loading) loading.style.display = 'none';
 
+  // إذا فشل الاتصال نعرض رسالة
+  if (!scores.length) {
+    wrap.innerHTML = '<div class="lb-title">🏆 GLOBAL TOP PLAYERS</div><div style="text-align:center;padding:20px;font-size:12px;letter-spacing:2px;color:rgba(255,255,255,.2);">BE THE FIRST TO PLAY! 🚀</div>';
+    return;
+  }
+
   wrap.innerHTML = '<div class="lb-title">🏆 GLOBAL TOP PLAYERS</div>';
-  scores.slice(0, 10).forEach((r, i) => {
+  scores.slice(0, 20).forEach((r, i) => {
+    const isYou = savedName && r.name === savedName;
     const rc = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
     const ri = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1;
     const wDot = (BASE_WORLDS.find(w => w.name === r.world) || {}).dot || '#333';
     const el = document.createElement('div');
-    el.className = 'lb-row' + (r.you ? ' you' : '');
+    el.className = 'lb-row' + (isYou ? ' you' : '');
     el.innerHTML = `
       <div class="lb-rank ${rc}">${ri}</div>
-      <div class="lb-avatar" style="background:${wDot}22;border-color:${wDot}44;">${r.emoji}</div>
+      <div class="lb-avatar" style="background:${wDot}22;border-color:${wDot}44;">${r.emoji || '⚡'}</div>
       <div class="lb-info">
-        <div class="lb-name">${r.name}${r.you ? ' <span style="color:var(--c1);font-size:11px">(YOU)</span>' : ''}</div>
-        <div class="lb-world">${r.world} · LV${r.lv || 1}</div>
+        <div class="lb-name">${r.name}${isYou ? ' <span style="color:var(--c1);font-size:11px">(YOU)</span>' : ''}</div>
+        <div class="lb-world">${r.world || 'CYBER'} · LV${r.lv || 1}</div>
       </div>
       <div class="lb-score">${r.score}</div>`;
     wrap.appendChild(el);
@@ -2763,7 +2717,9 @@ async function buildLeaderboard() {
 }
 
 async function saveGlobalScore(score, worldName, worldEmoji) {
-  await LB_API.submitScore(score, worldName, worldEmoji);
+  const name = localStorage.getItem('player_name') || 'PLAYER';
+  const lv = LevelSys.getCurrentLevel().lv;
+  await FB.submitScore(name, score, worldName, worldEmoji, lv);
   buildLeaderboard();
 }
 
