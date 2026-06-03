@@ -22,24 +22,28 @@ canvas#gc{display:block;position:fixed;inset:0;}
 
 /* ── HUD ── */
 #hud{position:fixed;top:0;left:0;right:0;z-index:20;pointer-events:none;padding:14px 14px 0;}
-#score-wrap{text-align:center;}
+#score-wrap{text-align:center;padding-top:44px;}
 #score-lbl{display:none;}
 #score-num{font-family:'Black Ops One',monospace;font-size:clamp(80px,20vw,130px);line-height:1;color:#fff;transition:transform .1s;}
 #score-num.pop{transform:scale(1.18);}
 #best-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:2px;}
 #best-lbl{font-size:11px;letter-spacing:4px;color:rgba(255,255,255,.22);}
 #best-num{font-family:'Black Ops One',monospace;font-size:19px;color:rgba(255,255,255,.32);}
+/* 🪙 Coins — أعلى وسط */
 #coins-hud{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:20;pointer-events:none;display:flex;align-items:center;gap:5px;background:rgba(255,222,3,.08);border:1px solid rgba(255,222,3,.2);border-radius:20px;padding:5px 14px;}
 #coins-ico{font-size:16px;}
 #coins-val{font-family:'Black Ops One',monospace;font-size:16px;color:var(--c3);text-shadow:var(--s3);}
+/* 🌍 World — أعلى يسار */
 #world-hud{position:fixed;top:16px;left:14px;z-index:20;pointer-events:none;}
 .wh-badge{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:8px 14px;}
 .wh-dot{width:9px;height:9px;border-radius:50%;}
 .wh-name{font-size:13px;letter-spacing:3px;color:rgba(255,255,255,.4);text-transform:uppercase;}
+/* ⚡ PU — أعلى يمين */
 #pu-hud{position:fixed;top:16px;right:14px;z-index:20;pointer-events:none;display:flex;flex-direction:column;gap:5px;}
 .pu-active{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border-radius:10px;padding:6px 11px;border:1px solid rgba(255,255,255,.1);}
 .pu-ico{font-size:20px;}
-#streak{position:fixed;top:50%;right:14px;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none;z-index:20;opacity:0;transition:opacity .3s;}
+/* 🔥 Streak — وسط يسار (بعيد عن pu-hud) */
+#streak{position:fixed;top:50%;left:14px;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none;z-index:20;opacity:0;transition:opacity .3s;}
 #streak.show{opacity:1;}
 #streak-n{font-family:'Black Ops One',monospace;font-size:34px;color:var(--c1);text-shadow:var(--s1);}
 #streak-lbl{font-size:11px;letter-spacing:4px;color:rgba(0,255,204,.4);}
