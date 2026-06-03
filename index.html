@@ -1904,6 +1904,10 @@ function tap() {
   let pts = 1;
   if (GS.activePU.x2) pts = 2;
   if (GS.fever) pts *= 2;
+
+  // ── 3x STREAK BONUS: double points ──
+  if (perf && GS.streak >= 2) pts *= 2; // streak will be incremented below
+
   GS.score += pts;
 
   // Earn coins
@@ -1918,6 +1922,11 @@ function tap() {
     screenFlash('rgba(0,255,204,0.12)');
     updateMission('perfects', 1);
     if (GS.streak >= 5 && !GS.fever) startFever();
+
+    // ── CLEAN SCREEN at streak 3+ (keep score, clear blocks) ──
+    if (GS.streak === 3) {
+      _triggerCleanScreen();
+    }
   } else {
     if (GS.fever) stopFever();
     GS.streak = 0; SFX.stack(); Haptic.stack();
@@ -1954,6 +1963,65 @@ function gameOver() {
 }
 
 // ── FEVER ─────────────────────────────────
+// ── CLEAN SCREEN (3x Streak) ──────────────────────────
+function _triggerCleanScreen() {
+  // Show "×2 STREAK!" banner
+  const banner = document.createElement('div');
+  banner.id = 'streak-clean-banner';
+  banner.innerHTML = `
+    <div style="font-family:'Black Ops One',monospace;font-size:clamp(22px,6vw,36px);letter-spacing:4px;
+      background:linear-gradient(135deg,var(--c3),var(--c2));-webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;filter:drop-shadow(0 0 18px rgba(0,255,204,.9));
+      animation:perfectBounce .4s cubic-bezier(.23,1.6,.4,1) both;">🔥 3× STREAK!</div>
+    <div style="font-size:13px;letter-spacing:5px;color:rgba(255,255,255,.4);margin-top:6px;
+      animation:fadeUp .4s .15s both;">DOUBLE POINTS + CLEAN SCREEN</div>`;
+  Object.assign(banner.style, {
+    position:'fixed', top:'38%', left:'50%',
+    transform:'translate(-50%,-50%)',
+    textAlign:'center', zIndex:'50',
+    pointerEvents:'none',
+    opacity:'1', transition:'opacity .5s'
+  });
+  document.body.appendChild(banner);
+
+  // Flash gold
+  screenFlash('rgba(255,222,3,0.18)');
+  Haptic.newbest && Haptic.newbest();
+
+  // After 900ms: animate blocks away + reset stack
+  setTimeout(() => {
+    banner.style.opacity = '0';
+    setTimeout(() => banner.remove(), 500);
+
+    // Keep score & best, reset blocks to fresh single base
+    const savedScore  = GS.score;
+    const savedBest   = GS.best;
+    const savedStreak = GS.streak;
+    const savedPerf   = GS.perfects;
+
+    // Reset blocks to one base block (same width as current top)
+    const topBlock = blocks[blocks.length - 1];
+    const baseW = topBlock ? topBlock.w : GS.blockW || 180;
+    blocks.length = 0;
+    blocks.push({ x: (C.width - baseW) / 2, y: 0, w: baseW, color: topBlock ? topBlock.color : cw().colors[0] });
+    camY = 0;
+
+    // Restore state
+    GS.score    = savedScore;
+    GS.best     = savedBest;
+    GS.streak   = savedStreak;
+    GS.perfects = savedPerf;
+
+    // Clean sweep flash
+    screenFlash('rgba(0,255,204,0.10)');
+    updHUD();
+
+    // Restart slider on new clean base
+    dropping = false;
+    setTimeout(() => newSlider(), 80);
+  }, 900);
+}
+
 function startFever() {
   GS.fever = true; SFX.fever(); Haptic.fever(); Voice.fever();
   document.getElementById('combo-fever').classList.add('active');
