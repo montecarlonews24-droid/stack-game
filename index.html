@@ -23,8 +23,8 @@ canvas#gc{display:block;position:fixed;inset:0;}
 /* ── HUD ── */
 #hud{position:fixed;top:0;left:0;right:0;z-index:20;pointer-events:none;padding:14px 14px 0;}
 #score-wrap{text-align:center;}
-#score-lbl{font-size:12px;letter-spacing:6px;color:rgba(255,255,255,.3);text-transform:uppercase;}
-#score-num{font-family:'Black Ops One',monospace;font-size:clamp(62px,15vw,100px);line-height:1;color:#fff;transition:transform .1s;}
+#score-lbl{display:none;}
+#score-num{font-family:'Black Ops One',monospace;font-size:clamp(80px,20vw,130px);line-height:1;color:#fff;transition:transform .1s;}
 #score-num.pop{transform:scale(1.18);}
 #best-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:2px;}
 #best-lbl{font-size:11px;letter-spacing:4px;color:rgba(255,255,255,.22);}
@@ -103,8 +103,8 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
 
 /* ── TABS ── */
 #tabs{position:relative;z-index:2;display:flex;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:4px;width:min(370px,94vw);}
-.tab{flex:1;padding:12px 6px;border-radius:13px;font-family:'Black Ops One',monospace;font-size:11px;letter-spacing:1px;color:rgba(255,255,255,.3);background:transparent;border:none;cursor:pointer;transition:all .2s;}
-.tab.active{background:rgba(255,255,255,.08);color:#fff;}
+.tab{flex:1;padding:12px 6px;border-radius:13px;font-family:'Black Ops One',monospace;font-size:20px;color:rgba(255,255,255,.3);background:transparent;border:none;cursor:pointer;transition:all .2s;}
+.tab.active{background:rgba(255,255,255,.08);color:#fff;filter:drop-shadow(0 0 6px rgba(255,255,255,0.3));}
 .tab-settings-btn{font-size:22px !important;filter:drop-shadow(0 0 6px rgba(255,255,255,0.55));color:rgba(255,255,255,0.85) !important;}
 .tab-pane{display:none;flex-direction:column;align-items:center;gap:10px;width:min(370px,94vw);position:relative;z-index:2;}
 .tab-pane.active{display:flex;}
@@ -403,7 +403,7 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
 
   <!-- TABS: PLAY · 🌍 · 🏆 · 🛒 · ⚙️ -->
   <div id="tabs">
-    <button class="tab active" onclick="showTab('play')">PLAY</button>
+    <button class="tab active" onclick="showTab('play')">▶</button>
     <button class="tab" onclick="showTab('worlds')">🌍</button>
     <button class="tab" onclick="showTab('lb')">🏆</button>
     <button class="tab" onclick="showTab('shop')">🛒</button>
