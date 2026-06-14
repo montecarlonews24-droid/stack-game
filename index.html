@@ -1200,7 +1200,7 @@ const Coins = {
 
 // ── SKINS ─────────────────────────────────
 const SKINS = [
-  { id: 'default', name: 'CYBER', ico: '⚡', price: 0,   colors: ['#00ffcc','#00ddaa','#0099cc'] },
+  { id: 'default', name: 'CYBER', ico: '⚡', price: 0,   colors: ['#00ffcc','#3d9fff','#a259ff','#ff3cac','#00ff88','#ffde03','#ff8800'] },
   { id: 'fire',    name: 'FIRE',  ico: '🔥', price: 50,  colors: ['#ff4400','#ff8800','#ffcc00'] },
   { id: 'ice',     name: 'ICE',   ico: '🧊', price: 50,  colors: ['#88eeff','#aaf5ff','#cceeff'] },
   { id: 'gold',    name: 'GOLD',  ico: '👑', price: 100, colors: ['#ffde03','#ffaa00','#ff8800'] },
@@ -2188,14 +2188,22 @@ function _triggerCleanScreen() {
   const removeCount = Math.min(3, Math.max(0, blocks.length - 1));
   if (removeCount === 0) { GS.streak = 0; return; }
 
-  const sparkle = ['#ffde03', '#00ffcc', '#ffffff', '#ff3cac'];
+  const sparkle = ['#ffde03', '#00ffcc', '#ffffff', '#ff3cac', '#a259ff', '#3d9fff'];
 
+  // Capture the 3 blocks BEFORE removing them — used for explosion positions only
+  const erased = blocks.slice(blocks.length - removeCount);
+  const erasedCamY = camY; // screen-space is fixed once captured, regardless of later camY shifts
+
+  // ── STATE CHANGES happen immediately (synchronously) — no race with gameplay ──
+  blocks.splice(blocks.length - removeCount, removeCount);
+  camY = Math.max(0, camY - removeCount * 22);
+  GS.streak = 0;
+
+  // ── VISUALS — purely decorative, run on their own timers ──
   // Cascading explosion bursts — top block first, each with shake + boom
-  for (let n = 0; n < removeCount; n++) {
-    const idx = blocks.length - 1 - n; // top-down
-    const b = blocks[idx];
+  erased.slice().reverse().forEach((b, n) => {
     setTimeout(() => {
-      Explosion.burst(b.x + b.w / 2, b.y - 22 + camY, b.color, 45, {
+      Explosion.burst(b.x + b.w / 2, b.y - 22 + erasedCamY, b.color, 45, {
         palette: sparkle,
         ringColor: '255,222,3',
         ringColor2: '0,255,204',
@@ -2205,12 +2213,12 @@ function _triggerCleanScreen() {
       triggerShake(10);
       SFX.boom(); Haptic.perfect();
     }, n * 110);
-  }
+  });
 
-  // Big finishing burst dead-center of the cleared stack
+  // Big finishing burst dead-center of where the cleared stack was
   setTimeout(() => {
-    const topB = blocks[blocks.length - 1];
-    Explosion.burst(topB.x + topB.w / 2, topB.y - 22 + camY - 30, '#ffde03', 60, {
+    const mid = erased[Math.floor(erased.length / 2)];
+    Explosion.burst(mid.x + mid.w / 2, mid.y - 22 + erasedCamY - 20, '#ffde03', 60, {
       palette: sparkle,
       ringColor: '0,255,204',
       ringColor2: '255,60,172',
@@ -2245,20 +2253,10 @@ function _triggerCleanScreen() {
   setTimeout(() => {
     banner.style.opacity = '0';
     setTimeout(() => banner.remove(), 500);
-
-    // Erase the last 3 perfect blocks, keeping the tower below them intact
-    blocks.splice(blocks.length - removeCount, removeCount);
-    camY = Math.max(0, camY - removeCount * 22);
-
-    // Reset streak so the next 3-in-a-row can trigger this again
-    GS.streak = 0;
-
     screenFlash('rgba(0,255,204,0.10)');
-    updHUD();
-
-    dropping = false;
-    setTimeout(() => newSlider(), 80);
   }, 1100);
+
+  updHUD();
 }
 
 function startFever() {
