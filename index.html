@@ -1871,27 +1871,83 @@ function _mockRewardMistake(cb) {
 
 // ── SOUND ENGINE ──────────────────────────
 const AC = new (window.AudioContext || window.webkitAudioContext)();
-function beep(freq, dur, vol = 0.3, type = 'sine') {
+const SFX_MASTER_VOL = 0.4; // master volume multiplier — lowers all sound effects
+
+// Soft synth tone with attack/release envelope + optional lowpass filter + pitch glide
+function tone(freq, opts = {}) {
   if (!SET.sfx) return;
+  const { dur = 0.15, type = 'sine', vol = 0.3, attack = 0.006, release, filterFreq, filterQ = 1, detune = 0, glideTo } = opts;
+  const rel = release !== undefined ? release : dur;
   try {
     const o = AC.createOscillator(), g = AC.createGain();
-    o.connect(g); g.connect(AC.destination);
     o.type = type; o.frequency.value = freq;
-    g.gain.setValueAtTime(vol, AC.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + dur);
-    o.start(); o.stop(AC.currentTime + dur);
+    if (detune) o.detune.value = detune;
+    let node = o;
+    if (filterFreq) {
+      const f = AC.createBiquadFilter();
+      f.type = 'lowpass'; f.frequency.value = filterFreq; f.Q.value = filterQ;
+      node.connect(f); node = f;
+    }
+    node.connect(g); g.connect(AC.destination);
+    const now = AC.currentTime, peak = Math.max(0.0001, vol * SFX_MASTER_VOL);
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(peak, now + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + attack + rel);
+    if (glideTo) o.frequency.exponentialRampToValueAtTime(glideTo, now + attack + rel);
+    o.start(now); o.stop(now + attack + rel + 0.03);
   } catch (e) {}
 }
+
+// Filtered white-noise burst — used for soft thuds/explosions instead of harsh buzzes
+function noiseBurst(opts = {}) {
+  if (!SET.sfx) return;
+  const { dur = 0.2, vol = 0.25, filterFreq = 800, filterQ = 0.8, attack = 0.001 } = opts;
+  try {
+    const len = Math.max(1, Math.floor(AC.sampleRate * dur));
+    const buffer = AC.createBuffer(1, len, AC.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = AC.createBufferSource(); src.buffer = buffer;
+    const f = AC.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = filterFreq; f.Q.value = filterQ;
+    const g = AC.createGain();
+    const now = AC.currentTime, peak = Math.max(0.0001, vol * SFX_MASTER_VOL);
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(peak, now + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    src.connect(f); f.connect(g); g.connect(AC.destination);
+    src.start(now);
+  } catch (e) {}
+}
+
 const SFX = {
-  stack()   { beep(440,.08,.25,'square'); setTimeout(() => beep(660,.06,.2,'square'), 60); },
-  perfect() { beep(880,.06,.3,'sine'); setTimeout(() => beep(1100,.06,.25,'sine'), 70); setTimeout(() => beep(1320,.12,.2,'sine'), 140); },
-  powerup() { beep(440,.06,.3,'sawtooth'); setTimeout(() => beep(880,.15,.2,'sawtooth'), 180); },
-  gameover(){ beep(440,.1,.3,'sawtooth'); setTimeout(() => beep(220,.2,.2,'sawtooth'), 240); },
-  newbest() { [523,659,784,1047].forEach((f,i) => setTimeout(() => beep(f,.12,.2,'sine'), i*80)); },
-  fever()   { beep(880,.05,.35,'sawtooth'); setTimeout(() => beep(1760,.2,.2,'sawtooth'), 180); },
-  coin()    { beep(1047,.06,.15,'sine'); setTimeout(() => beep(1319,.08,.12,'sine'), 70); },
-  boom()    { beep(160,.18,.35,'sawtooth'); setTimeout(() => beep(1400,.08,.18,'sine'), 60); },
-  miss()    { beep(220,.12,.3,'square'); setTimeout(() => beep(140,.18,.25,'square'), 90); },
+  // Soft "tock" when a block lands (non-perfect)
+  stack()    { tone(300, { dur: .09, type: 'triangle', vol: .16, attack: .003, release: .08, filterFreq: 1400 }); },
+  // Gentle ascending bell chime
+  perfect()  { [659, 880, 1108].forEach((f, i) => setTimeout(() => tone(f, { type: 'triangle', vol: .2, attack: .004, release: .16, filterFreq: 4200 }), i * 65)); },
+  // Soft rising sparkle for power-ups
+  powerup()  {
+    tone(330, { dur: .05, type: 'sine', vol: .14, attack: .004, release: .05 });
+    setTimeout(() => tone(660, { dur: .05, type: 'sine', vol: .14, attack: .004, release: .05 }), 55);
+    setTimeout(() => tone(990, { type: 'triangle', vol: .18, attack: .004, release: .18, filterFreq: 3200 }), 110);
+  },
+  // Mellow descending tone for game over
+  gameover() {
+    tone(330, { type: 'triangle', vol: .18, attack: .005, release: .18, filterFreq: 1500 });
+    setTimeout(() => tone(220, { type: 'triangle', vol: .16, attack: .005, release: .32, filterFreq: 1000 }), 150);
+  },
+  // Triumphant ascending major arpeggio
+  newbest()  { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, { type: 'triangle', vol: .2, attack: .004, release: .2, filterFreq: 4500 }), i * 85)); },
+  // Warm shimmering pad for fever mode
+  fever() {
+    tone(440, { dur: .4, type: 'triangle', vol: .12, attack: .015, release: .4, filterFreq: 2200 });
+    tone(440, { dur: .4, type: 'triangle', vol: .1, attack: .015, release: .4, filterFreq: 2200, detune: 9 });
+  },
+  // Bright two-note "ding" for coins
+  coin()     { tone(1318, { dur: .07, type: 'sine', vol: .14, attack: .002, release: .07 }); setTimeout(() => tone(1568, { dur: .09, type: 'sine', vol: .14, attack: .002, release: .09 }), 55); },
+  // Rounded thump for the block-clear explosion (filtered noise + low sine)
+  boom()     { noiseBurst({ dur: .22, vol: .2, filterFreq: 550, filterQ: .7 }); tone(90, { dur: .22, type: 'sine', vol: .22, attack: .004, release: .22 }); },
+  // Soft low thud + faint noise for a missed block
+  miss()     { tone(260, { type: 'triangle', vol: .16, attack: .004, release: .15, filterFreq: 1200, glideTo: 140 }); noiseBurst({ dur: .07, vol: .06, filterFreq: 350 }); },
 };
 
 // Beat-synced background music
