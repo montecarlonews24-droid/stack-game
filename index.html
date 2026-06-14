@@ -47,6 +47,26 @@ canvas#gc{display:block;position:fixed;inset:0;}
 #coins-ico{font-size:13px;flex-shrink:0;}
 #coins-val{font-family:'Black Ops One',monospace;font-size:13px;color:var(--c3);text-shadow:var(--s3);overflow:hidden;text-overflow:ellipsis;}
 
+/* ❤️ Lives — أسفل الكوينز، أعلى وسط */
+#lives-hud{position:fixed;top:42px;left:50%;transform:translateX(-50%);z-index:22;pointer-events:none;display:flex;align-items:center;gap:4px;}
+#lives-hud .life{font-size:14px;filter:drop-shadow(0 0 4px rgba(255,60,172,.5));transition:transform .25s,opacity .25s;}
+#lives-hud .life.lost{opacity:.25;transform:scale(.7);filter:none;}
+
+/* 💔 Mistake Save overlay */
+#mistake-ov{position:fixed;inset:0;z-index:210;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;}
+#mistake-ov.on{opacity:1;pointer-events:all;}
+#mistake-box{width:min(340px,88vw);background:linear-gradient(145deg,#0a0a18,#0d0d20);border:1px solid rgba(255,60,172,.25);border-radius:22px;padding:26px 20px;text-align:center;}
+#mistake-ico{font-size:42px;filter:drop-shadow(0 0 14px rgba(255,60,172,.6));animation:perfectBounce .4s cubic-bezier(.23,1.6,.4,1) both;}
+#mistake-title{font-family:'Black Ops One',monospace;font-size:22px;letter-spacing:4px;color:var(--c2);margin-top:8px;text-shadow:var(--s2);}
+#mistake-sub{font-size:12px;letter-spacing:2px;color:rgba(255,255,255,.4);margin-top:8px;line-height:1.6;}
+#mistake-lives{display:flex;justify-content:center;gap:6px;margin-top:12px;font-size:20px;}
+#mistake-lives .life.lost{opacity:.25;}
+#mistake-btns{display:flex;flex-direction:column;gap:10px;margin-top:18px;}
+#m-adbar{display:none;margin-top:4px;}
+#m-adbar-t{height:4px;background:rgba(255,60,172,.1);border-radius:2px;overflow:hidden;}
+#m-adbar-f{height:100%;width:0%;background:linear-gradient(90deg,var(--c2),var(--c4));border-radius:2px;transition:width .1s linear;}
+#m-adbar-l{font-size:11px;letter-spacing:2px;color:rgba(255,60,172,.35);text-align:center;margin-top:4px;}
+
 /* 🌍 World — أعلى يسار */
 #world-hud{position:fixed;top:14px;left:12px;z-index:22;pointer-events:none;max-width:calc(36vw - 12px);}
 .wh-badge{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:6px 9px;}
@@ -492,6 +512,7 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
   </div>
 </div>
 <div id="coins-hud"><span id="coins-ico">🪙</span><span id="coins-val">0</span></div>
+<div id="lives-hud"><span class="life">❤️</span><span class="life">❤️</span><span class="life">❤️</span></div>
 <div id="level-hud"><span id="level-lbl">LV 1</span><div id="level-xp-bar"><div id="level-xp-f" style="width:0%"></div></div></div>
 <div id="world-hud"><div class="wh-badge"><div class="wh-dot" id="wh-dot"></div><div class="wh-name" id="wh-name">CYBER</div></div></div>
 <div id="pu-hud" style="display:none;"></div>
@@ -744,6 +765,23 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
       <button id="btn-spin-free" onclick="doSpin(false)">🎰 WATCH AD & SPIN!</button>
       <button id="btn-spin-paid" onclick="doSpin(true)">▶ WATCH AD — GET +1 SPIN</button>
       <button id="btn-spin-close" onclick="closeSpin()">✕ CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MISTAKE SAVE (Watch Ad to Continue) ═══ -->
+<div id="mistake-ov">
+  <div id="mistake-box">
+    <div id="mistake-ico">💔</div>
+    <div id="mistake-title">OOPS!</div>
+    <div id="mistake-sub">Don't lose your tower!<br>Watch a short ad to keep playing.</div>
+    <div id="mistake-lives">
+      <span class="life">❤️</span><span class="life">❤️</span><span class="life">❤️</span>
+    </div>
+    <div id="mistake-btns">
+      <button class="gbtn gbtn-purple" id="btn-mistake-ad">📺 WATCH AD &amp; CONTINUE</button>
+      <div id="m-adbar"><div id="m-adbar-t"><div id="m-adbar-f"></div></div><div id="m-adbar-l">Ad playing… <span id="m-adsec">3</span>s</div></div>
+      <button class="gbtn gbtn-ghost" id="btn-mistake-end">🏁 End Game</button>
     </div>
   </div>
 </div>
@@ -1824,6 +1862,12 @@ function _mockReward(cb) {
   w.style.display = 'block'; let p = 0, sc = 5;
   const iv = setInterval(() => { p += 2; f.style.width = Math.min(100, p) + '%'; sc = Math.max(0, Math.ceil(5 - p / 20)); s.textContent = sc; if (p >= 100) { clearInterval(iv); cb(); } }, 100);
 }
+function _mockRewardMistake(cb) {
+  const w = document.getElementById('m-adbar'), f = document.getElementById('m-adbar-f'), s = document.getElementById('m-adsec'), b = document.getElementById('btn-mistake-ad');
+  b.classList.add('gbtn-dis'); b.textContent = '⏳ LOADING…';
+  w.style.display = 'block'; let p = 0, sc = 3;
+  const iv = setInterval(() => { p += 3.33; f.style.width = Math.min(100, p) + '%'; sc = Math.max(0, Math.ceil(3 - p / 33.3)); s.textContent = sc; if (p >= 100) { clearInterval(iv); cb(); } }, 100);
+}
 
 // ── SOUND ENGINE ──────────────────────────
 const AC = new (window.AudioContext || window.webkitAudioContext)();
@@ -1847,6 +1891,7 @@ const SFX = {
   fever()   { beep(880,.05,.35,'sawtooth'); setTimeout(() => beep(1760,.2,.2,'sawtooth'), 180); },
   coin()    { beep(1047,.06,.15,'sine'); setTimeout(() => beep(1319,.08,.12,'sine'), 70); },
   boom()    { beep(160,.18,.35,'sawtooth'); setTimeout(() => beep(1400,.08,.18,'sine'), 60); },
+  miss()    { beep(220,.12,.3,'square'); setTimeout(() => beep(140,.18,.25,'square'), 90); },
 };
 
 // Beat-synced background music
@@ -1947,6 +1992,7 @@ const GS = {
   rewardUsed:false, worldId:0,
   activePU:{}, shield:false,
   gameCount:0, fever:false,
+  mistakesLeft:3,
   worldsPlayed: new Set(JSON.parse(localStorage.getItem('worlds_played')||'[]')),
 };
 let selectedWorldId = 0;
@@ -1983,6 +2029,7 @@ function initGame(fresh = true) {
   }
   blocks = []; particles = []; puItems = []; weatherParts = [];
   clearAllPU(); stopFever(); Trail.clear(); Explosion.clear();
+  GS.mistakesLeft = 3;
   const W = C.width, base = Math.min(W * .55, 220);
   blocks.push({ x: (W - base) / 2, y: gY(), w: base, color: '#1a2a3a' });
   newSlider(); camY = 0; dropping = false; state = 'play';
@@ -2029,6 +2076,7 @@ function tap() {
 
   if (ovlap <= 0) {
     if (GS.shield) { GS.shield = false; clearPU('shield'); SFX.stack(); Haptic.stack(); dropping = false; newSlider(); return; }
+    if (GS.mistakesLeft > 0) { showMistakeOverlay(); return; }
     gameOver(); return;
   }
 
@@ -2102,6 +2150,36 @@ function gameOver() {
   clearAllPU(); stopFever();
   Ghost.saveReplay();
   setTimeout(showGameOver, 480);
+}
+
+// ── MISTAKE SAVE (block completely missed — offer ad to continue) ──────────────
+function showMistakeOverlay() {
+  GS.streak = 0;
+  SFX.miss(); Haptic.gameover();
+  screenFlash('rgba(255,60,172,0.18)');
+  triggerShake(8);
+
+  // Small explosion where the slider fell
+  Explosion.burst(slider.x + slider.w / 2, slider.y - 22 + camY, slider.color, 28, {
+    palette: ['#ff3cac', '#ffffff'],
+    ringColor: '255,60,172',
+    ringSize: 90
+  });
+
+  // Update lives indicator inside the modal
+  const lives = document.querySelectorAll('#mistake-lives .life');
+  lives.forEach((el, i) => el.classList.toggle('lost', i >= GS.mistakesLeft));
+  const left = GS.mistakesLeft;
+  document.getElementById('mistake-sub').innerHTML =
+    `You have <strong style="color:var(--c3)">${left}</strong> save${left > 1 ? 's' : ''} left.<br>Watch a short ad to keep your tower!`;
+
+  // Reset ad button + bar state
+  const adBtn = document.getElementById('btn-mistake-ad');
+  adBtn.classList.remove('gbtn-dis'); adBtn.textContent = '📺 WATCH AD & CONTINUE';
+  document.getElementById('m-adbar').style.display = 'none';
+  document.getElementById('m-adbar-f').style.width = '0%';
+
+  document.getElementById('mistake-ov').classList.add('on');
 }
 
 // ── CLEAN SCREEN (3x Streak: erase the last 3 perfect blocks) ──────────────────────────
@@ -2384,6 +2462,10 @@ function updHUD() {
     document.getElementById('streak-n').textContent = GS.streak;
     for (let i = 0; i < 5; i++) document.getElementById('sp' + i).classList.toggle('on', i < Math.min(GS.streak, 5));
   } else sw.classList.remove('show');
+
+  // Lives HUD
+  const lives = document.querySelectorAll('#lives-hud .life');
+  lives.forEach((el, i) => el.classList.toggle('lost', i >= GS.mistakesLeft));
 }
 function animScore() { const e = document.getElementById('score-num'); e.classList.add('pop'); setTimeout(() => e.classList.remove('pop'), 110); }
 
@@ -2502,6 +2584,24 @@ document.getElementById('btn-continue').addEventListener('click', () => {
   document.getElementById('logo').style.display = 'block';
   // Resume without resetting blocks/score
   initGame(false);
+});
+
+// MISTAKE SAVE — watch ad to keep playing after a complete miss
+document.getElementById('btn-mistake-ad').addEventListener('click', () => {
+  const btn = document.getElementById('btn-mistake-ad');
+  if (btn.classList.contains('gbtn-dis')) return;
+  _mockRewardMistake(() => {
+    GS.mistakesLeft--;
+    updHUD();
+    document.getElementById('mistake-ov').classList.remove('on');
+    SFX.powerup(); Haptic.powerup();
+    dropping = false;
+    setTimeout(() => newSlider(), 80);
+  });
+});
+document.getElementById('btn-mistake-end').addEventListener('click', () => {
+  document.getElementById('mistake-ov').classList.remove('on');
+  gameOver();
 });
 
 // ── INPUT ─────────────────────────────────
