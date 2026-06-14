@@ -2122,7 +2122,8 @@ function initGame(fresh = true) {
 
 function newSlider() {
   const w = cw(), top = blocks[blocks.length - 1], W = C.width;
-  let spd = w.speed + GS.score * .08;
+  // Gradual speed ramp: slower early growth, capped so late-game never feels impossible
+  let spd = w.speed + Math.min(GS.score * .05, 9);
   if (GS.activePU.slow) spd *= .38;
   const dir = Math.random() < .5 ? 1 : -1;
   let bw = top.w;
@@ -2157,7 +2158,7 @@ function tap() {
     gameOver(); return;
   }
 
-  const perf = Math.abs(slider.x - top.x) < 7;
+  const perf = Math.abs(slider.x - top.x) < 9;
   if (!perf) spawnCuts(slider.x < top.x ? slider.x : top.x + top.w, slider.x < top.x ? top.x - slider.x : slider.x + slider.w - (top.x + top.w), slider.y, slider.color);
 
   const newX = perf ? top.x : oL, newW = perf ? top.w : ovlap;
@@ -2672,6 +2673,19 @@ document.getElementById('btn-mistake-ad').addEventListener('click', () => {
     document.getElementById('mistake-ov').classList.remove('on');
     SFX.powerup(); Haptic.powerup();
     dropping = false;
+
+    // ── RESCUE WIDEN: if the current top block is too small to realistically
+    // continue on, widen it to a playable size (centered on its old position) ──
+    const top = blocks[blocks.length - 1];
+    const RESCUE_W = Math.min(C.width * .4, 160);
+    if (top.w < RESCUE_W) {
+      const cx = top.x + top.w / 2;
+      let newW = RESCUE_W;
+      let newX = cx - newW / 2;
+      newX = Math.max(0, Math.min(newX, C.width - newW));
+      top.x = newX; top.w = newW;
+    }
+
     setTimeout(() => newSlider(), 80);
   });
 });
