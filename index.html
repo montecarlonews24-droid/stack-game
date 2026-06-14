@@ -1919,11 +1919,41 @@ function noiseBurst(opts = {}) {
   } catch (e) {}
 }
 
+// Xylophone/marimba-style note: bright mallet "click" attack + warm sine body
+function xylophone(freq, vol = 0.28) {
+  if (!SET.sfx) return;
+  try {
+    const now = AC.currentTime, peak = Math.max(0.0001, vol * SFX_MASTER_VOL);
+    // Body — sine, medium decay
+    const o1 = AC.createOscillator(), g1 = AC.createGain();
+    o1.type = 'sine'; o1.frequency.value = freq;
+    g1.gain.setValueAtTime(peak, now);
+    g1.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+    o1.connect(g1); g1.connect(AC.destination);
+    o1.start(now); o1.stop(now + 0.45);
+    // Mallet click — bright high overtone, very short
+    const o2 = AC.createOscillator(), g2 = AC.createGain();
+    o2.type = 'triangle'; o2.frequency.value = freq * 4;
+    g2.gain.setValueAtTime(peak * 0.35, now);
+    g2.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+    o2.connect(g2); g2.connect(AC.destination);
+    o2.start(now); o2.stop(now + 0.05);
+  } catch (e) {}
+}
+
+// Ascending pentatonic scale — classic "Stack game" ladder feel
+const STACK_SCALE = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50, 1174.66, 1318.51, 1567.98, 1760.00];
+let stackNoteIdx = 0;
+
 const SFX = {
-  // Soft "tock" when a block lands (non-perfect)
-  stack()    { tone(300, { dur: .09, type: 'triangle', vol: .16, attack: .003, release: .08, filterFreq: 1400 }); },
-  // Gentle ascending bell chime
-  perfect()  { [659, 880, 1108].forEach((f, i) => setTimeout(() => tone(f, { type: 'triangle', vol: .2, attack: .004, release: .16, filterFreq: 4200 }), i * 65)); },
+  // Xylophone "ding" that climbs a pentatonic scale with each successful stack
+  stack()    { xylophone(STACK_SCALE[stackNoteIdx % STACK_SCALE.length], .22); stackNoteIdx++; },
+  // Same ladder, brighter + a quick high sparkle echo for Perfect
+  perfect()  {
+    const f = STACK_SCALE[stackNoteIdx % STACK_SCALE.length];
+    xylophone(f, .3); stackNoteIdx++;
+    setTimeout(() => xylophone(f * 2, .12), 70);
+  },
   // Soft rising sparkle for power-ups
   powerup()  {
     tone(330, { dur: .05, type: 'sine', vol: .14, attack: .004, release: .05 });
@@ -2075,6 +2105,7 @@ function initGame(fresh = true) {
   if (AC.state === 'suspended') AC.resume();
   if (fresh) {
     GS.score = 0; GS.streak = 0; GS.perfects = 0;
+    stackNoteIdx = 0; // restart the musical ladder
     GS.rewardUsed = false; GS.activePU = {}; GS.shield = false;
     GS.fever = false; GS.gameCount++;
     updateMission('games', 1);
