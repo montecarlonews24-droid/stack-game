@@ -1970,28 +1970,76 @@ const SFX = {
   miss()     { tone(260, { type: 'triangle', vol: .16, attack: .004, release: .15, filterFreq: 1200, glideTo: 140 }); noiseBurst({ dur: .07, vol: .06, filterFreq: 350 }); },
 };
 
-// Beat-synced background music
+// ── BACKGROUND MUSIC: synthwave loop (pad chords + bass + arpeggio) ──
+// Gives the menu/splash and gameplay a sense of "life" — a looping
+// cyber/neon-style progression instead of a single faint blip.
 let bgMusic = {
-  playing: false, iv: null,
+  playing: false, timer: null, step: 0,
+  stepDur: 220, // ms per 16th-step (~68 BPM groove)
+  // 4-chord cyber/synthwave progression (root frequencies, Hz)
+  chords: [
+    [220.00, 277.18, 329.63], // Am-ish
+    [196.00, 246.94, 293.66], // G
+    [174.61, 220.00, 261.63], // F
+    [164.81, 207.65, 246.94], // E
+  ],
   play() {
     if (!SET.music || this.playing) return;
-    this.playing = true; let step = 0;
-    const notes = [261,293,329,349,392,440,493,523];
-    this.iv = setInterval(() => {
-      if (!SET.music) { this.pause(); return; }
-      try {
-        const o = AC.createOscillator(), g = AC.createGain();
-        o.connect(g); g.connect(AC.destination);
-        o.type = 'sine'; o.frequency.value = notes[step % notes.length];
-        g.gain.setValueAtTime(0.04, AC.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.18);
-        o.start(); o.stop(AC.currentTime + 0.2);
-        step++;
-        BeatSync.tick(performance.now());
-      } catch (e) {}
-    }, 250);
+    this.playing = true; this.step = 0;
+    this._loop();
   },
-  pause() { this.playing = false; clearInterval(this.iv); }
+  _loop() {
+    if (!this.playing) return;
+    if (!SET.music) { this.pause(); return; }
+    const stepsPerChord = 8;
+    const chordIdx = Math.floor(this.step / stepsPerChord) % this.chords.length;
+    const chord = this.chords[chordIdx];
+    const pos = this.step % stepsPerChord;
+    const now = AC.currentTime;
+
+    try {
+      // Pad swell at the start of each chord
+      if (pos === 0) {
+        const chordDur = stepsPerChord * this.stepDur / 1000;
+        chord.forEach(f => {
+          const o = AC.createOscillator(), g = AC.createGain(), filt = AC.createBiquadFilter();
+          o.type = 'triangle'; o.frequency.value = f;
+          filt.type = 'lowpass'; filt.frequency.value = 1100; filt.Q.value = 0.6;
+          o.connect(filt); filt.connect(g); g.connect(AC.destination);
+          g.gain.setValueAtTime(0.0001, now);
+          g.gain.exponentialRampToValueAtTime(0.05, now + 0.6);
+          g.gain.exponentialRampToValueAtTime(0.0001, now + chordDur);
+          o.start(now); o.stop(now + chordDur + 0.05);
+        });
+      }
+      // Bass pulse on every other 16th
+      if (pos % 2 === 0) {
+        const o = AC.createOscillator(), g = AC.createGain();
+        o.type = 'sine'; o.frequency.value = chord[0] / 2;
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.09, now + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
+        o.connect(g); g.connect(AC.destination);
+        o.start(now); o.stop(now + 0.3);
+      }
+      // Arpeggio melody, one note per step
+      const arpFreq = chord[pos % chord.length] * 2;
+      const o2 = AC.createOscillator(), g2 = AC.createGain(), f2 = AC.createBiquadFilter();
+      o2.type = 'sine'; o2.frequency.value = arpFreq;
+      f2.type = 'lowpass'; f2.frequency.value = 2400;
+      o2.connect(f2); f2.connect(g2); g2.connect(AC.destination);
+      g2.gain.setValueAtTime(0.0001, now);
+      g2.gain.exponentialRampToValueAtTime(0.045, now + 0.005);
+      g2.gain.exponentialRampToValueAtTime(0.0001, now + 0.17);
+      o2.start(now); o2.stop(now + 0.2);
+
+      BeatSync.tick(performance.now());
+    } catch (e) {}
+
+    this.step = (this.step + 1) % (stepsPerChord * this.chords.length);
+    this.timer = setTimeout(() => this._loop(), this.stepDur);
+  },
+  pause() { this.playing = false; clearTimeout(this.timer); }
 };
 
 // ── POWERUPS ──────────────────────────────
@@ -2695,6 +2743,15 @@ document.getElementById('btn-mistake-end').addEventListener('click', () => {
 });
 
 // ── INPUT ─────────────────────────────────
+// Start ambient music on the very first user interaction (required by
+// browser autoplay policies) — gives the menu/splash some life too.
+function _unlockAudio() {
+  if (AC.state === 'suspended') AC.resume();
+  if (SET.music) bgMusic.play();
+}
+document.addEventListener('click', _unlockAudio, { once: true });
+document.addEventListener('touchstart', _unlockAudio, { once: true, passive: true });
+
 document.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); if (state === 'play') tap(); } });
 C.addEventListener('click', () => { if (state === 'play') tap(); });
 C.addEventListener('touchstart', e => { e.preventDefault(); if (state === 'play') tap(); }, { passive: false });
