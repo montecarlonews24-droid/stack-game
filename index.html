@@ -2110,8 +2110,9 @@ function tap() {
     screenFlash('rgba(0,255,204,0.12)');
     updateMission('perfects', 1);
     if (GS.streak >= 5 && !GS.fever) startFever();
+    updHUD(); // show live streak counter (1, 2, 3...) immediately
 
-    // ── CLEAN SCREEN at streak 3+ (keep score, clear blocks) ──
+    // ── CLEAN SCREEN at streak 3+ (erase last 3 blocks) ──
     if (GS.streak === 3) {
       _triggerCleanScreen();
     }
@@ -2455,7 +2456,7 @@ function updHUD() {
   document.getElementById('best-num').textContent = GS.best;
   const sb = document.getElementById('set-best'); if (sb) sb.textContent = GS.best;
   const sw = document.getElementById('streak');
-  if (GS.streak >= 3) {
+  if (GS.streak >= 1) {
     sw.classList.add('show');
     document.getElementById('streak-n').textContent = GS.streak;
     for (let i = 0; i < 5; i++) document.getElementById('sp' + i).classList.toggle('on', i < Math.min(GS.streak, 5));
