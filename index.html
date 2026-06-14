@@ -430,7 +430,7 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
   <div class="ob-slide" id="ob-1">
     <div class="ob-ico">⭐</div>
     <div class="ob-title">PERFECT STACK</div>
-    <div class="ob-desc">Land it exactly on top for a <strong style="color:var(--c3);">PERFECT!</strong><br>3 Perfects in a row = CLEAN SCREEN + Double Points!</div>
+    <div class="ob-desc">Land it exactly on top for a <strong style="color:var(--c3);">PERFECT!</strong><br>3 Perfects in a row = those 3 blocks get erased + Double Points!</div>
     <div style="width:100%;background:rgba(255,222,3,.05);border:1px solid rgba(255,222,3,.2);border-radius:14px;padding:14px;font-family:'Black Ops One',monospace;font-size:13px;color:rgba(255,222,3,.6);letter-spacing:3px;text-align:center;">
       🔥 3× STREAK = ×2 POINTS
     </div>
@@ -2096,8 +2096,18 @@ function gameOver() {
   setTimeout(showGameOver, 480);
 }
 
-// ── CLEAN SCREEN (3x Streak) ──────────────────────────
+// ── CLEAN SCREEN (3x Streak: erase the last 3 perfect blocks) ──────────────────────────
 function _triggerCleanScreen() {
+  // Keep at least 1 block (the base) — remove up to the last 3 perfect blocks
+  const removeCount = Math.min(3, Math.max(0, blocks.length - 1));
+  if (removeCount === 0) { GS.streak = 0; return; }
+
+  // Explosion burst on each of the 3 blocks about to be erased
+  for (let i = blocks.length - removeCount; i < blocks.length; i++) {
+    const b = blocks[i];
+    Explosion.burst(b.x + b.w / 2, b.y - 22 + camY, b.color, 35);
+  }
+
   // Show banner
   const banner = document.createElement('div');
   banner.id = 'streak-clean-banner';
@@ -2105,9 +2115,9 @@ function _triggerCleanScreen() {
     <div style="font-family:'Black Ops One',monospace;font-size:clamp(22px,6vw,36px);letter-spacing:4px;
       background:linear-gradient(135deg,var(--c3),var(--c2));-webkit-background-clip:text;
       -webkit-text-fill-color:transparent;filter:drop-shadow(0 0 18px rgba(0,255,204,.9));
-      animation:perfectBounce .4s cubic-bezier(.23,1.6,.4,1) both;">🔥 3× STREAK!</div>
+      animation:perfectBounce .4s cubic-bezier(.23,1.6,.4,1) both;">🔥 3× PERFECT!</div>
     <div style="font-size:13px;letter-spacing:5px;color:rgba(255,255,255,.4);margin-top:6px;
-      animation:fadeUp .4s .15s both;">DOUBLE POINTS + CLEAN SCREEN</div>`;
+      animation:fadeUp .4s .15s both;">BLOCKS CLEARED!</div>`;
   Object.assign(banner.style, {
     position:'fixed', top:'58%', left:'50%',
     transform:'translate(-50%,-50%)',
@@ -2124,27 +2134,12 @@ function _triggerCleanScreen() {
     banner.style.opacity = '0';
     setTimeout(() => banner.remove(), 500);
 
-    // Save state
-    const savedScore  = GS.score;
-    const savedBest   = GS.best;
-    const savedStreak = GS.streak;
-    const savedPerf   = GS.perfects;
+    // Erase the last 3 perfect blocks, keeping the tower below them intact
+    blocks.splice(blocks.length - removeCount, removeCount);
+    camY = Math.max(0, camY - removeCount * 22);
 
-    // Keep the top block width but reset its Y to gY() — same as initGame
-    const topBlock = blocks[blocks.length - 1];
-    const baseW = topBlock ? topBlock.w : 180;
-    const baseColor = topBlock ? topBlock.color : '#1a2a3a';
-
-    blocks.length = 0;
-    // y: gY() matches where initGame places the first block — no visual jump
-    blocks.push({ x: (C.width - baseW) / 2, y: gY(), w: baseW, color: baseColor });
-    camY = 0;
-
-    // Restore state
-    GS.score    = savedScore;
-    GS.best     = savedBest;
-    GS.streak   = savedStreak;
-    GS.perfects = savedPerf;
+    // Reset streak so the next 3-in-a-row can trigger this again
+    GS.streak = 0;
 
     screenFlash('rgba(0,255,204,0.10)');
     updHUD();
