@@ -80,10 +80,10 @@ canvas#gc{display:block;position:fixed;inset:0;}
 
 /* 🔥 Streak — يسار وسط الشاشة، بعيداً عن منطقة البلوكات الوسطى */
 #streak{position:fixed;top:50%;left:8px;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none;z-index:20;opacity:0;transition:opacity .3s;
-  background:rgba(0,0,0,.35);border-radius:10px;padding:6px 5px;}
+  background:rgba(0,0,0,.45);border-radius:14px;padding:10px 8px;border:1px solid rgba(0,255,204,.25);}
 #streak.show{opacity:1;}
-#streak-n{font-family:'Black Ops One',monospace;font-size:26px;color:var(--c1);text-shadow:var(--s1);line-height:1;}
-#streak-lbl{font-size:8px;letter-spacing:3px;color:rgba(0,255,204,.45);}
+#streak-n{font-family:'Black Ops One',monospace;font-size:46px;color:var(--c1);text-shadow:var(--s1);line-height:1;}
+#streak-lbl{font-size:11px;letter-spacing:3px;color:rgba(0,255,204,.6);margin-top:2px;}
 .spip{width:4px;height:4px;border-radius:50%;background:rgba(0,255,204,.2);}
 .spip.on{background:var(--c1);box-shadow:0 0 6px #00ffcc88;}
 
@@ -2136,7 +2136,7 @@ function tap() {
     gameOver(); return;
   }
 
-  const perf = Math.abs(slider.x - top.x) < 4;
+  const perf = Math.abs(slider.x - top.x) < 7;
   if (!perf) spawnCuts(slider.x < top.x ? slider.x : top.x + top.w, slider.x < top.x ? top.x - slider.x : slider.x + slider.w - (top.x + top.w), slider.y, slider.color);
 
   const newX = perf ? top.x : oL, newW = perf ? top.w : ovlap;
@@ -2514,7 +2514,7 @@ function updHUD() {
   const sw = document.getElementById('streak');
   if (GS.streak >= 1) {
     sw.classList.add('show');
-    document.getElementById('streak-n').textContent = GS.streak;
+    document.getElementById('streak-n').textContent = GS.streak + '/3';
     for (let i = 0; i < 5; i++) document.getElementById('sp' + i).classList.toggle('on', i < Math.min(GS.streak, 5));
   } else sw.classList.remove('show');
 
