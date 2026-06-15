@@ -87,6 +87,13 @@ canvas#gc{display:block;position:fixed;inset:0;}
 .spip{width:4px;height:4px;border-radius:50%;background:rgba(0,255,204,.2);}
 .spip.on{background:var(--c1);box-shadow:0 0 6px #00ffcc88;}
 
+/* Progressive glow as streak approaches 3/3 */
+#streak.lvl1{box-shadow:0 0 12px rgba(0,255,204,.18);}
+#streak.lvl2{box-shadow:0 0 22px rgba(0,255,204,.4);border-color:rgba(0,255,204,.55);}
+#streak.lvl3{box-shadow:0 0 32px rgba(255,222,3,.6);border-color:rgba(255,222,3,.75);}
+#streak.lvl3 #streak-n{animation:streakGlow .5s ease infinite;}
+@keyframes streakGlow{0%,100%{transform:scale(1);}50%{transform:scale(1.12);}}
+
 /* ── COMBO FEVER ── */
 #combo-fever{position:fixed;inset:0;pointer-events:none;z-index:15;opacity:0;transition:opacity .5s;}
 #combo-fever.active{opacity:1;}
@@ -112,6 +119,13 @@ canvas#gc{display:block;position:fixed;inset:0;}
 #coin-popup{position:fixed;top:65%;left:50%;transform:translate(-50%,-50%) scale(0);pointer-events:none;z-index:32;opacity:0;transition:transform .18s cubic-bezier(.23,1.4,.4,1),opacity .25s;text-align:center;}
 #coin-popup.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
 #coin-popup-txt{font-family:'Black Ops One',monospace;font-size:20px;color:var(--c3);text-shadow:var(--s3);letter-spacing:2px;}
+
+/* ── PTS POPUP — "+N PERFECT!" floating above score ── */
+#pts-popup{position:fixed;top:96px;left:50%;transform:translate(-50%,4px) scale(.8);pointer-events:none;z-index:33;opacity:0;
+  font-family:'Black Ops One',monospace;font-size:18px;letter-spacing:3px;color:var(--c1);text-shadow:var(--s1);
+  transition:opacity .25s,transform .35s cubic-bezier(.23,1.4,.4,1);white-space:nowrap;}
+#pts-popup.show{opacity:1;transform:translate(-50%,-22px) scale(1);}
+#pts-popup.perfect{color:var(--c3);text-shadow:var(--s3);font-size:20px;}
 
 /* ── PU POPUP — يمين وسط الشاشة (لا يتعارض مع streak اليسار) ── */
 #pu-popup{position:fixed;top:50%;right:12px;transform:translateY(-50%) scale(0);pointer-events:none;z-index:31;opacity:0;transition:transform .15s cubic-bezier(.23,1.4,.4,1),opacity .3s;text-align:center;}
@@ -501,6 +515,7 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
     <div id="best-row"><div id="best-lbl">BEST</div><div id="best-num">0</div></div>
   </div>
 </div>
+<div id="pts-popup"></div>
 <div id="coins-hud"><span id="coins-ico">🪙</span><span id="coins-val">0</span></div>
 <div id="lives-hud"><span class="life">❤️</span><span class="life">❤️</span><span class="life">❤️</span></div>
 <div id="level-hud"><span id="level-lbl">LV 1</span><div id="level-xp-bar"><div id="level-xp-f" style="width:0%"></div></div></div>
@@ -1163,6 +1178,18 @@ function showCoinPopup(amount) {
   el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 900);
   Haptic.coin();
+}
+
+// ── PTS POPUP — "+N" or "+N PERFECT!" floating above the score ──
+function showPtsPopup(pts, perfect) {
+  const el = document.getElementById('pts-popup');
+  if (!el) return;
+  el.textContent = '+' + pts + (perfect ? ' PERFECT!' : '');
+  el.classList.toggle('perfect', !!perfect);
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 750);
 }
 
 // ── SCREEN FLASH ──────────────────────────
@@ -2170,8 +2197,11 @@ function initGame(fresh = true) {
 
 function newSlider() {
   const w = cw(), top = blocks[blocks.length - 1], W = C.width;
-  // Gradual speed ramp: slower early growth, capped so late-game never feels impossible
-  let spd = w.speed + Math.min(GS.score * .05, 9);
+  // Gradual speed ramp: slower early growth, capped so late-game never feels impossible.
+  // Extra "early ease" phases the score-based bonus in gently over the first 8 blocks,
+  // so the very start of a run feels calm before settling into the normal curve.
+  const earlyEase = Math.min(GS.score / 8, 1);
+  let spd = w.speed + Math.min(GS.score * .05, 9) * earlyEase;
   if (GS.activePU.slow) spd *= .38;
   const dir = Math.random() < .5 ? 1 : -1;
   let bw = top.w;
@@ -2233,7 +2263,9 @@ function tap() {
     GS.perfects++; GS.streak++;
     if (GS.streak > GS.bestStreak) GS.bestStreak = GS.streak;
     showPerfect(); SFX.perfect(); Haptic.perfect();
-    screenFlash('rgba(0,255,204,0.12)');
+    showPtsPopup(pts, true);
+    screenFlash('rgba(0,255,204,0.18)');
+    triggerShake(4);
     updateMission('perfects', 1);
     if (GS.streak >= 5 && !GS.fever) startFever();
     updHUD(); // show live streak counter (1, 2, 3...) immediately
@@ -2245,6 +2277,7 @@ function tap() {
   } else {
     if (GS.fever) stopFever();
     GS.streak = 0; SFX.stack(); Haptic.stack();
+    showPtsPopup(pts, false);
     screenFlash('rgba(255,255,255,0.05)');
   }
 
@@ -2325,6 +2358,9 @@ function _triggerCleanScreen() {
   blocks.splice(blocks.length - removeCount, removeCount);
   camY = Math.max(0, camY - removeCount * 22);
   GS.streak = 0;
+
+  // Big bright flash for the 3/3 clear moment
+  screenFlash('rgba(255,222,3,0.22)');
 
   // ── VISUALS — purely decorative, run on their own timers ──
   // Cascading explosion bursts — top block first, each with shake + boom
@@ -2584,9 +2620,13 @@ function updHUD() {
   const sw = document.getElementById('streak');
   if (GS.streak >= 1) {
     sw.classList.add('show');
+    sw.classList.remove('lvl1','lvl2','lvl3');
+    sw.classList.add('lvl' + Math.min(GS.streak, 3));
     document.getElementById('streak-n').textContent = GS.streak + '/3';
     for (let i = 0; i < 5; i++) document.getElementById('sp' + i).classList.toggle('on', i < Math.min(GS.streak, 5));
-  } else sw.classList.remove('show');
+  } else {
+    sw.classList.remove('show','lvl1','lvl2','lvl3');
+  }
 
   // Lives HUD
   const lives = document.querySelectorAll('#lives-hud .life');
