@@ -1812,7 +1812,7 @@ function _mockSpinAd(cb) {
 // ═══ GAME ═══
 /* ═══════════════════════════════════════════
    STACK! Tower Rush — Core Game Engine
-   Ghost Mode · Power-ups · Sound · AdMob
+   Power-ups · Sound · AdMob
    ═══════════════════════════════════════════ */
 
 // ── SETTINGS ──────────────────────────────
@@ -2077,64 +2077,6 @@ const POWERUPS = [
   { id:'x2',     emoji:'×2', name:'2X SCORE!', color:'#a259ff', dur:8000 },
 ];
 
-// ── GHOST MODE ────────────────────────────
-const Ghost = {
-  recording: [],   // current game block positions
-  replay: [],      // last game's block positions
-  replayIdx: 0,
-  active: false,
-  beaten: 0,
-
-  startReplay() {
-    this.replay = JSON.parse(localStorage.getItem('ghost_replay') || '[]');
-    this.replayIdx = 0;
-    this.active = this.replay.length > 0;
-    this.recording = [];
-  },
-
-  saveReplay() {
-    if (this.recording.length > 0) {
-      localStorage.setItem('ghost_replay', JSON.stringify(this.recording));
-    }
-  },
-
-  record(x, w, score) {
-    this.recording.push({ x, w, score });
-  },
-
-  getGhostBlock(score) {
-    if (!this.active) return null;
-    const frame = this.replay.find(r => r.score === score);
-    return frame || null;
-  },
-
-  checkBeaten(score) {
-    const ghost = this.getGhostBlock(score);
-    if (ghost && GS.score > ghost.score) {
-      this.beaten++;
-      updateMission('ghost', 1);
-    }
-  },
-
-  draw(ctx, camY, blockH) {
-    if (!this.active) return;
-    const frame = this.replay[Math.min(this.replayIdx, this.replay.length - 1)];
-    if (!frame) return;
-    const idx = Math.floor(GS.score);
-    const ghostFrame = this.replay[Math.min(idx, this.replay.length - 1)];
-    if (!ghostFrame) return;
-    const y = (BASE_WORLDS[0] ? ctx.canvas.height - 80 : 400) - (idx + 1) * blockH - blockH;
-    ctx.save();
-    ctx.globalAlpha = 0.25;
-    ctx.fillStyle = '#ffffff';
-    ctx.shadowColor = '#ffffff';
-    ctx.shadowBlur = 12;
-    ctx.fillRect(ghostFrame.x, y + camY, ghostFrame.w, blockH);
-    ctx.globalAlpha = 1;
-    ctx.shadowBlur = 0;
-    ctx.restore();
-  },
-};
 
 // ── GAME STATE ────────────────────────────
 const GS = {
@@ -2177,7 +2119,6 @@ function initGame(fresh = true) {
     GS.worldsPlayed.add(GS.worldId);
     localStorage.setItem('worlds_played', JSON.stringify([...GS.worldsPlayed]));
     updateMission('worlds', GS.worldsPlayed.size);
-    Ghost.startReplay();
   }
   blocks = []; particles = []; puItems = []; weatherParts = [];
   clearAllPU(); stopFever(); Trail.clear(); Explosion.clear();
@@ -2242,9 +2183,6 @@ function tap() {
   const newX = perf ? top.x : oL, newW = perf ? top.w : ovlap;
   blocks.push({ x: newX, y: slider.y, w: newW, color: slider.color });
 
-  // Ghost record
-  Ghost.record(newX, newW, GS.score);
-
   let pts = 1;
   if (GS.activePU.x2) pts = 2;
   if (GS.fever) pts *= 2;
@@ -2308,7 +2246,6 @@ function gameOver() {
   const top = blocks[blocks.length - 1];
   Explosion.burst(top.x + top.w / 2, top.y - 22 + camY, top.color, 50);
   clearAllPU(); stopFever();
-  Ghost.saveReplay();
   setTimeout(showGameOver, 480);
 }
 
@@ -2547,9 +2484,6 @@ function draw() {
 
   // Trail (draw behind slider)
   Trail.draw(ctx);
-
-  // Ghost
-  Ghost.draw(ctx, camY, 22);
 
   // Blocks
   blocks.forEach((b, i) => {
