@@ -103,7 +103,7 @@ canvas#gc{display:block;position:fixed;inset:0;}
 #combo-txt.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
 
 /* ── PERFECT POPUP — أسفل score مباشرة (58%) ── */
-#perfect-wrap{position:fixed;top:58%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:30;display:flex;flex-direction:column;align-items:center;gap:4px;opacity:0;transition:opacity .3s;}
+#perfect-wrap{position:fixed;top:58%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:30;display:flex;flex-direction:column;align-items:center;gap:4px;opacity:0;transition:opacity .3s,top .25s ease-out;}
 #perfect-wrap.show{opacity:1;}
 #perfect-stars-top{display:flex;gap:8px;align-items:center;animation:starPop .35s cubic-bezier(.23,1.4,.4,1) both;}
 #perfect{font-family:'Black Ops One',monospace;font-size:clamp(28px,7vw,44px);letter-spacing:4px;background:linear-gradient(135deg,var(--c3) 0%,var(--c1) 50%,var(--c2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 20px rgba(0,255,204,1)) drop-shadow(0 0 40px rgba(255,222,3,.7));animation:perfectBounce .45s cubic-bezier(.23,1.6,.4,1) both;}
@@ -2572,6 +2572,16 @@ function showPerfect() {
   const wrap = document.getElementById('perfect-wrap');
   const msgs = ['AMAZING!','PERFECT!','FLAWLESS!','GENIUS!','WOW!'];
   document.getElementById('perfect-sub').textContent = msgs[Math.floor(Math.random() * msgs.length)];
+
+  // Keep the badge above the rising tower: as the topmost block climbs the
+  // screen, the badge climbs with it (with a safety margin), instead of
+  // sitting at a fixed spot and eventually getting covered by the blocks.
+  const topBlockScreenY = bY(blocks.length - 1) + camY;
+  const defaultTop = innerHeight * .58;   // normal resting spot, low tower
+  const minTop = innerHeight * .20;       // never rise above the HUD area
+  const dynamicTop = Math.max(minTop, Math.min(defaultTop, topBlockScreenY - 110));
+  wrap.style.top = dynamicTop + 'px';
+
   wrap.classList.remove('show'); void wrap.offsetWidth; wrap.classList.add('show');
   setTimeout(() => wrap.classList.remove('show'), 900);
   Voice.perfect();
