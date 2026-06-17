@@ -672,15 +672,15 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
     <!-- Reward Card -->
     <div id="rw" style="display:none;">
       <div class="rw-inner">
-        <div class="rw-row"><div class="rw-icon">🎁</div><div><div class="rw-t">DOUBLE SCORE</div><div class="rw-d">Watch ad — get ×2 points</div></div></div>
+        <div class="rw-row"><div class="rw-icon">🎁</div><div><div class="rw-t">DOUBLE SCORE</div><div class="rw-d">Instant bonus — get ×2 points</div></div></div>
         <div class="rw-nums">
           <div class="rn-b" id="rn-b">0</div>
           <svg width="28" height="10" viewBox="0 0 24 10" fill="none" style="flex:1;margin:0 5px;"><path d="M2 5H20" stroke="rgba(255,60,172,0.35)" stroke-width="1.5" stroke-dasharray="3 2"/><path d="M16 1L22 5L16 9" stroke="var(--c2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <div class="rn-a" id="rn-a">0</div>
           <div class="x2b">×2</div>
         </div>
-        <button class="gbtn gbtn-purple" id="btn-ad">▶ WATCH AD — GET ×2</button>
-        <div id="adbar"><div id="adbar-t"><div id="adbar-f"></div></div><div id="adbar-l">Ad playing… <span id="adsec">5</span>s</div></div>
+        <button class="gbtn gbtn-purple" id="btn-ad">🎁 BONUS — GET ×2</button>
+        <div id="adbar"><div id="adbar-t"><div id="adbar-f"></div></div><div id="adbar-l">Unlocking bonus… <span id="adsec">5</span>s</div></div>
       </div>
     </div>
 
@@ -768,7 +768,7 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
 <div id="spin-modal">
   <div id="spin-box">
     <div class="spin-title">🎰 LUCKY SPIN</div>
-    <div class="spin-sub">WATCH AD — SPIN THE WHEEL!</div>
+    <div class="spin-sub">SPIN THE WHEEL!</div>
     <div id="spin-dots" style="display:flex;justify-content:center;gap:8px;margin-bottom:14px;"></div>
     <div id="spin-wheel-wrap">
       <div id="spin-arrow">▼</div>
@@ -780,8 +780,8 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
     </div>
     <div id="spin-timer"></div>
     <div class="spin-btns">
-      <button id="btn-spin-free" onclick="doSpin(false)">🎰 WATCH AD & SPIN!</button>
-      <button id="btn-spin-paid" onclick="doSpin(true)">▶ WATCH AD — GET +1 SPIN</button>
+      <button id="btn-spin-free" onclick="doSpin(false)">🎰 SPIN NOW!</button>
+      <button id="btn-spin-paid" onclick="doSpin(true)">✨ GET +1 SPIN</button>
       <button id="btn-spin-close" onclick="closeSpin()">✕ CLOSE</button>
     </div>
   </div>
@@ -792,13 +792,13 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
   <div id="mistake-box">
     <div id="mistake-ico">💔</div>
     <div id="mistake-title">OOPS!</div>
-    <div id="mistake-sub">Don't lose your tower!<br>Watch a short ad to keep playing.</div>
+    <div id="mistake-sub">Don't lose your tower!<br>Get a free rescue to keep playing.</div>
     <div id="mistake-lives">
       <span class="life">❤️</span><span class="life">❤️</span><span class="life">❤️</span>
     </div>
     <div id="mistake-btns">
-      <button class="gbtn gbtn-purple" id="btn-mistake-ad">📺 WATCH AD &amp; CONTINUE</button>
-      <div id="m-adbar"><div id="m-adbar-t"><div id="m-adbar-f"></div></div><div id="m-adbar-l">Ad playing… <span id="m-adsec">3</span>s</div></div>
+      <button class="gbtn gbtn-purple" id="btn-mistake-ad">🛡️ RESCUE &amp; CONTINUE</button>
+      <div id="m-adbar"><div id="m-adbar-t"><div id="m-adbar-f"></div></div><div id="m-adbar-l">Rescuing… <span id="m-adsec">3</span>s</div></div>
       <button class="gbtn gbtn-ghost" id="btn-mistake-end">🏁 End Game</button>
     </div>
   </div>
@@ -1674,7 +1674,7 @@ function updateSpinButtons() {
     paidBtn.disabled = _spinRunning || spins >= LuckySpin.MAX_SPINS;
     paidBtn.textContent = spins >= LuckySpin.MAX_SPINS
       ? '✅ SPINS FULL'
-      : '▶ WATCH AD — GET +1 SPIN';
+      : '✨ GET +1 SPIN';
   }
   if (badge) {
     badge.textContent = `${spins}/${LuckySpin.MAX_SPINS} 🎰`;
@@ -1731,7 +1731,7 @@ function doSpin(watchAdForRefill) {
     // Watch ad to get +1 spin
     if (LuckySpin.getSpins() >= LuckySpin.MAX_SPINS) return;
     const paidBtn = document.getElementById('btn-spin-paid');
-    if (paidBtn) { paidBtn.disabled = true; paidBtn.textContent = '⏳ Loading ad…'; }
+    if (paidBtn) { paidBtn.disabled = true; paidBtn.textContent = '⏳ Loading…'; }
     _mockSpinAd(() => {
       LuckySpin.setSpins(LuckySpin.getSpins() + 1);
       updateSpinButtons();
@@ -1746,7 +1746,7 @@ function doSpin(watchAdForRefill) {
   if (!LuckySpin.canSpin()) return;
 
   const freeBtn = document.getElementById('btn-spin-free');
-  if (freeBtn) { freeBtn.disabled = true; freeBtn.textContent = '⏳ Loading ad…'; }
+  if (freeBtn) { freeBtn.disabled = true; freeBtn.textContent = '⏳ Loading…'; }
 
   _mockSpinAd(() => {
     // Ad watched — deduct spin & spin
@@ -1806,11 +1806,11 @@ function _mockSpinAd(cb) {
   const freeBtn = document.getElementById('btn-spin-free');
   const paidBtn = document.getElementById('btn-spin-paid');
   const timerEl = document.getElementById('spin-timer');
-  if (timerEl) timerEl.textContent = '📺 Ad playing… 5s';
+  if (timerEl) timerEl.textContent = '🎰 Spinning up… 5s';
   let t = 5;
   const iv = setInterval(() => {
     t--;
-    if (timerEl) timerEl.textContent = t > 0 ? `📺 Ad playing… ${t}s` : '✅ Done!';
+    if (timerEl) timerEl.textContent = t > 0 ? `🎰 Spinning up… ${t}s` : '✅ Done!';
     if (t <= 0) { clearInterval(iv); setTimeout(() => { cb && cb(); updateSpinTimer(); }, 300); }
   }, 1000);
 }
@@ -2325,7 +2325,7 @@ function showMistakeOverlay() {
 
   // Reset ad button + bar state
   const adBtn = document.getElementById('btn-mistake-ad');
-  adBtn.classList.remove('gbtn-dis'); adBtn.textContent = '📺 WATCH AD & CONTINUE';
+  adBtn.classList.remove('gbtn-dis'); adBtn.textContent = '🛡️ RESCUE & CONTINUE';
   document.getElementById('m-adbar').style.display = 'none';
   document.getElementById('m-adbar-f').style.width = '0%';
 
@@ -2668,7 +2668,7 @@ function showGameOver() {
   document.getElementById('rc').style.display = 'block';
   document.getElementById('rw').style.display = 'block';
   const ba = document.getElementById('btn-ad');
-  ba.classList.remove('gbtn-dis','gbtn-done'); ba.textContent = '▶ WATCH AD — GET ×2';
+  ba.classList.remove('gbtn-dis','gbtn-done'); ba.textContent = '🎁 BONUS — GET ×2';
   document.getElementById('adbar').style.display = 'none';
   document.getElementById('adbar-f').style.width = '0%';
   document.getElementById('logo').style.display = 'none';
