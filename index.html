@@ -2334,9 +2334,22 @@ function showMistakeOverlay() {
 
 // ── CLEAN SCREEN (3x Streak: erase the last 3 perfect blocks) ──────────────────────────
 function _triggerCleanScreen() {
-  // Keep at least 1 block (the base) — remove up to the last 3 perfect blocks
-  const removeCount = Math.min(3, Math.max(0, blocks.length - 1));
+  // Keep at least 1 block (the base). Start with the 3 perfect-streak blocks,
+  // then cascade downward through any additional blocks that share the exact
+  // same width ("same level") — a longer unbroken perfect run clears together
+  // in one big chain instead of capping at a flat 3. This rewards a skilled
+  // player with a satisfying cascade and keeps the tower from piling up
+  // indefinitely; the falling-speed curve (capped separately) still keeps
+  // demanding more precision as the run goes on, regardless of tower height.
+  let removeCount = Math.min(3, Math.max(0, blocks.length - 1));
   if (removeCount === 0) { GS.streak = 0; return; }
+  const matchWidth = blocks[blocks.length - 1].w;
+  while (
+    removeCount < blocks.length - 1 &&
+    Math.abs(blocks[blocks.length - removeCount - 1].w - matchWidth) < 0.5
+  ) {
+    removeCount++;
+  }
 
   const sparkle = ['#ffde03', '#00ffcc', '#ffffff', '#ff3cac', '#a259ff', '#3d9fff'];
 
@@ -2389,7 +2402,7 @@ function _triggerCleanScreen() {
     <div style="font-family:'Black Ops One',monospace;font-size:clamp(22px,6vw,36px);letter-spacing:4px;
       background:linear-gradient(135deg,var(--c3),var(--c2));-webkit-background-clip:text;
       -webkit-text-fill-color:transparent;filter:drop-shadow(0 0 18px rgba(0,255,204,.9));
-      animation:perfectBounce .4s cubic-bezier(.23,1.6,.4,1) both;">🔥 3× PERFECT!</div>
+      animation:perfectBounce .4s cubic-bezier(.23,1.6,.4,1) both;">🔥 ${removeCount}× PERFECT!</div>
     <div style="font-size:13px;letter-spacing:5px;color:rgba(255,255,255,.4);margin-top:6px;
       animation:fadeUp .4s .15s both;">BLOCKS CLEARED!</div>`;
   Object.assign(banner.style, {
