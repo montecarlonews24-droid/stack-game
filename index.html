@@ -1467,7 +1467,7 @@ const Tournament = {
       const el = document.createElement('div');
       el.className = 'tc-row' + (r.you ? ' you' : '');
       const ri = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
-      el.innerHTML = `<div class="tc-rank${i===0?' g':''}">${ri}</div><div style="font-size:18px;">${r.emoji}</div><div class="tc-name">${r.name}${r.you?' (YOU)':''}</div><div class="tc-score">${r.score}</div>`;
+      el.innerHTML = `<div class="tc-rank${i===0?' g':''}">${ri}</div><div style="font-size:18px;">${r.emoji}</div><div class="tc-name">${r.name}${r.you?' (YOU)':''}</div><div class="tc-score">${disp(r.score)}</div>`;
       wrap.appendChild(el);
     });
   },
@@ -2110,6 +2110,14 @@ const POWERUPS = [
 ];
 
 
+// ── DISPLAY-ONLY SCORE MULTIPLIER ─────────
+// Pure visual inflation so the player FEELS like they're scoring big.
+// Real game logic (speed curve, missions, daily goals, world-unlock thresholds,
+// Firebase storage) keeps using raw GS.score / GS.best — untouched here.
+// disp() is applied just before a score-like number is painted on screen.
+const SCORE_DISPLAY_MULT = 10;
+function disp(n) { return n * SCORE_DISPLAY_MULT; }
+
 // ── GAME STATE ────────────────────────────
 const GS = {
   score:0, best:parseInt(localStorage.getItem('stack_best')||'0'),
@@ -2233,7 +2241,7 @@ function tap() {
     GS.perfects++; GS.streak++;
     if (GS.streak > GS.bestStreak) GS.bestStreak = GS.streak;
     showPerfect(); SFX.perfect(); Haptic.perfect();
-    showPtsPopup(pts, true);
+    showPtsPopup(disp(pts), true);
     screenFlash('rgba(0,255,204,0.18)');
     triggerShake(4);
     updateMission('perfects', 1);
@@ -2247,7 +2255,7 @@ function tap() {
   } else {
     if (GS.fever) stopFever();
     GS.streak = 0; SFX.stack(); Haptic.stack();
-    showPtsPopup(pts, false);
+    showPtsPopup(disp(pts), false);
     screenFlash('rgba(255,255,255,0.05)');
   }
 
@@ -2529,7 +2537,7 @@ function draw() {
     if (i === blocks.length - 1 && GS.score > 0) {
       ctx.fillStyle = GS.fever ? 'rgba(255,222,3,.8)' : 'rgba(255,255,255,.28)';
       ctx.font = 'bold 13px "Exo 2",sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(GS.score, b.x + b.w / 2, y + 15);
+      ctx.fillText(disp(GS.score), b.x + b.w / 2, y + 15);
     }
   });
 
@@ -2580,9 +2588,9 @@ function rr(c, x, y, w, h, r) {
 
 // ── HUD ───────────────────────────────────
 function updHUD() {
-  document.getElementById('score-num').textContent = GS.score;
-  document.getElementById('best-num').textContent = GS.best;
-  const sb = document.getElementById('set-best'); if (sb) sb.textContent = GS.best;
+  document.getElementById('score-num').textContent = disp(GS.score);
+  document.getElementById('best-num').textContent = disp(GS.best);
+  const sb = document.getElementById('set-best'); if (sb) sb.textContent = disp(GS.best);
   const sw = document.getElementById('streak');
   if (GS.streak >= 1) {
     sw.classList.add('show');
@@ -2621,17 +2629,17 @@ function showPerfect() {
 
 // ── GAME OVER SCREEN ──────────────────────
 function showGameOver() {
-  document.getElementById('rc-score').textContent = GS.score;
-  document.getElementById('rc-best').textContent = GS.best;
-  document.getElementById('sp-score').textContent = GS.score;
+  document.getElementById('rc-score').textContent = disp(GS.score);
+  document.getElementById('rc-best').textContent = disp(GS.best);
+  document.getElementById('sp-score').textContent = disp(GS.score);
   document.getElementById('sp-streak').textContent = GS.bestStreak;
   document.getElementById('sp-perf').textContent = GS.perfects;
   document.getElementById('sp-world').textContent = cw().name;
   const nb = document.getElementById('new-best');
   if (GS.score >= GS.best && GS.score > 0) { nb.style.display = 'block'; SFX.newbest(); Voice.newbest(); Haptic.newbest(); }
   else nb.style.display = 'none';
-  document.getElementById('rn-b').textContent = GS.score;
-  document.getElementById('rn-a').textContent = GS.score * 2;
+  document.getElementById('rn-b').textContent = disp(GS.score);
+  document.getElementById('rn-a').textContent = disp(GS.score * 2);
   document.getElementById('rc').style.display = 'block';
   document.getElementById('rw').style.display = 'block';
   const ba = document.getElementById('btn-ad');
@@ -2700,10 +2708,10 @@ document.getElementById('btn-ad').addEventListener('click', () => {
     // Double score
     GS.score *= 2;
     if (GS.score > GS.best) { GS.best = GS.score; localStorage.setItem('stack_best', GS.best); }
-    document.getElementById('rc-score').textContent = GS.score;
-    document.getElementById('rc-best').textContent = GS.best;
-    document.getElementById('rn-a').textContent = GS.score;
-    document.getElementById('sp-score').textContent = GS.score;
+    document.getElementById('rc-score').textContent = disp(GS.score);
+    document.getElementById('rc-best').textContent = disp(GS.best);
+    document.getElementById('rn-a').textContent = disp(GS.score);
+    document.getElementById('sp-score').textContent = disp(GS.score);
     const ba = document.getElementById('btn-ad');
     ba.classList.remove('gbtn-dis'); ba.classList.add('gbtn-done'); ba.textContent = '✅ SCORE DOUBLED!';
     document.getElementById('adbar').style.display = 'none';
@@ -3012,7 +3020,7 @@ async function buildLeaderboard() {
         <div class="lb-name">${r.name}${isYou ? ' <span style="color:var(--c1);font-size:11px">(YOU)</span>' : ''}</div>
         <div class="lb-world">${r.world || 'CYBER'} · LV${r.lv || 1}</div>
       </div>
-      <div class="lb-score">${r.score}</div>`;
+      <div class="lb-score">${disp(r.score)}</div>`;
     wrap.appendChild(el);
   });
 }
@@ -3062,7 +3070,7 @@ const PushNotif = {
 
 // ═══ BOOT ═══
 AdMob.init(); AdMob.banner();
-document.getElementById('best-num').textContent = GS.best;
+document.getElementById('best-num').textContent = disp(GS.best);
 updateDailyUI(GS.best);
 startDailyTimer();
 buildMissions();
