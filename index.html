@@ -1856,16 +1856,46 @@ function sendContact() {
 }
 
 // ── ADMOB ─────────────────────────────────
+// Median.co's native AdMob bridge only supports Banner + Interstitial — there is
+// no "Rewarded" ad format in their JS Bridge. So the two "Watch Ad" buttons can't
+// show a true rewarded ad; instead, when running inside the real app, we fire a
+// real Interstitial impression at that same moment (the player already expects
+// an ad there) while keeping the existing free reward + progress-bar UX exactly
+// as before. Outside the app (plain browser testing) everything falls back to
+// the fake mock, so nothing breaks during preview.
+const IS_MEDIAN_APP = navigator.userAgent.indexOf('median') > -1;
+function _realInterstitial() {
+  if (IS_MEDIAN_APP && window.median && median.admob) {
+    try { median.admob.showInterstitialIfReady(); } catch (e) {}
+  }
+}
 const AdMob = {
   APP:    'ca-app-pub-7391340097032763~6110309479',
   BANNER: 'ca-app-pub-7391340097032763/7231819452',
   INTER:  'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
-  REWARD: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
   _g: 0,
-  init()   { console.log('[AdMob]', this.APP); },
+  init() {
+    console.log('[AdMob]', this.APP);
+    if (IS_MEDIAN_APP) {
+      // Real native banner is rendered by Median itself below the webview —
+      // hide our fake placeholder bar so they don't show stacked on top of each other.
+      const fb = document.getElementById('banner');
+      if (fb) fb.style.display = 'none';
+      if (window.median && median.admob && median.admob.banner) {
+        try { median.admob.banner.enable(); } catch (e) {}
+      }
+    }
+  },
   banner() {},
-  interstitial(cb) { this._g++; if (this._g % 3 === 0) _mockInter(cb); else cb && cb(); },
-  rewarded(cb) { _mockReward(cb); }
+  interstitial(cb) {
+    this._g++;
+    if (this._g % 3 !== 0) { cb && cb(); return; }
+    if (IS_MEDIAN_APP) { _realInterstitial(); cb && cb(); }
+    else _mockInter(cb);
+  },
+  // No real "rewarded" format exists on Median — fire a real Interstitial
+  // alongside the existing free-reward flow instead of a fake-only experience.
+  rewarded(cb) { _realInterstitial(); _mockReward(cb); }
 };
 function _mockInter(cb) {
   const ov = document.getElementById('inter'), s = document.getElementById('isec'), btn = document.getElementById('icta');
@@ -1880,11 +1910,13 @@ function _mockReward(cb) {
   const iv = setInterval(() => { p += 2; f.style.width = Math.min(100, p) + '%'; sc = Math.max(0, Math.ceil(5 - p / 20)); s.textContent = sc; if (p >= 100) { clearInterval(iv); cb(); } }, 100);
 }
 function _mockRewardMistake(cb) {
+  _realInterstitial();
   const w = document.getElementById('m-adbar'), f = document.getElementById('m-adbar-f'), s = document.getElementById('m-adsec'), b = document.getElementById('btn-mistake-ad');
   b.classList.add('gbtn-dis'); b.textContent = '⏳ LOADING…';
   w.style.display = 'block'; let p = 0, sc = 3;
   const iv = setInterval(() => { p += 3.33; f.style.width = Math.min(100, p) + '%'; sc = Math.max(0, Math.ceil(3 - p / 33.3)); s.textContent = sc; if (p >= 100) { clearInterval(iv); cb(); } }, 100);
 }
+
 
 // ── SOUND ENGINE ──────────────────────────
 const AC = new (window.AudioContext || window.webkitAudioContext)();
