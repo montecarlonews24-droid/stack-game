@@ -412,9 +412,15 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
 #lb-live-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(0,255,100,.07);border:1px solid rgba(0,255,100,.2);border-radius:20px;padding:4px 12px;font-size:10px;letter-spacing:3px;color:rgba(0,255,100,.6);margin-bottom:8px;}
 #lb-live-dot{width:6px;height:6px;border-radius:50%;background:#00ff64;box-shadow:0 0 6px #00ff64;animation:bda 1.5s ease infinite;}
 #lb-name-input-wrap{width:100%;display:flex;gap:8px;margin-bottom:10px;overflow:hidden;}
-#lb-name-input{flex:1;min-width:0;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:11px 14px;color:#fff;font-family:'Exo 2',sans-serif;font-size:14px;outline:none;letter-spacing:1px;}
-#lb-name-save-btn{background:linear-gradient(135deg,var(--c1),#0099cc);color:#000;font-family:'Black Ops One',monospace;font-size:11px;letter-spacing:1px;padding:11px 12px;border-radius:12px;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+#lb-name-input,#go-name-input{flex:1;min-width:0;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:11px 14px;color:#fff;font-family:'Exo 2',sans-serif;font-size:14px;outline:none;letter-spacing:1px;}
+#lb-name-save-btn,#go-name-save-btn{background:linear-gradient(135deg,var(--c1),#0099cc);color:#000;font-family:'Black Ops One',monospace;font-size:11px;letter-spacing:1px;padding:11px 12px;border-radius:12px;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0;}
 #lb-loading{text-align:center;padding:20px;font-size:12px;letter-spacing:3px;color:rgba(255,255,255,.2);}
+
+/* ── GAME OVER — set player name prompt (shown until a custom name is saved) ── */
+#go-name-row{margin:12px 0;}
+.go-name-lbl{font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.3);text-align:center;margin-bottom:6px;}
+#go-name-input-wrap{width:100%;display:flex;gap:8px;overflow:hidden;}
+
 
 </style>
 </head>
@@ -651,6 +657,13 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
           <div class="rcs"><div class="rcs-v" id="sp-streak">0</div><div class="rcs-l">Streak</div></div>
           <div class="rcs"><div class="rcs-v" id="sp-perf">0</div><div class="rcs-l">Perfects</div></div>
           <div class="rcs"><div class="rcs-v" id="sp-world" style="font-size:15px;">CYBER</div><div class="rcs-l">World</div></div>
+        </div>
+      </div>
+      <div id="go-name-row" style="display:none;">
+        <div class="go-name-lbl">SET YOUR PLAYER NAME FOR THE LEADERBOARD</div>
+        <div id="go-name-input-wrap">
+          <input id="go-name-input" type="text" placeholder="Enter your player name…" maxlength="12"/>
+          <button id="go-name-save-btn" onclick="saveGoName()">SAVE</button>
         </div>
       </div>
       <div id="new-best"><div id="new-best-txt">★ NEW BEST SCORE! ★</div></div>
@@ -2640,6 +2653,18 @@ function showGameOver() {
   else nb.style.display = 'none';
   document.getElementById('rn-b').textContent = disp(GS.score);
   document.getElementById('rn-a').textContent = disp(GS.score * 2);
+  const goRow = document.getElementById('go-name-row');
+  if (goRow) {
+    const alreadyShown = localStorage.getItem('name_prompt_shown') === '1';
+    if (hasCustomName() || alreadyShown) {
+      goRow.style.display = 'none';
+    } else {
+      goRow.style.display = 'block';
+      const gi = document.getElementById('go-name-input');
+      if (gi) gi.value = getPlayerName();
+      localStorage.setItem('name_prompt_shown', '1'); // one-time only — never nag again after this
+    }
+  }
   document.getElementById('rc').style.display = 'block';
   document.getElementById('rw').style.display = 'block';
   const ba = document.getElementById('btn-ad');
@@ -2971,15 +2996,48 @@ const FB = {
   },
 };
 
+// ── PLAYER NAME — auto-generated fallback + lightweight Game Over prompt ──
+// Goal: every real score saved to the leaderboard gets a distinct identity,
+// even if the player never opens the Leaderboard tab to set a custom name.
+function genFallbackName() { return 'PLAYER' + Math.floor(1000 + Math.random() * 9000); }
+
+function getPlayerName() {
+  let n = localStorage.getItem('player_name');
+  if (!n) { n = genFallbackName(); localStorage.setItem('player_name', n); }
+  return n;
+}
+
+function hasCustomName() {
+  if (localStorage.getItem('name_is_custom') === '1') return true;
+  const n = localStorage.getItem('player_name');
+  // Names set before this fix existed count as custom too, unless they happen
+  // to match our own auto-generated fallback pattern (PLAYER + 4 digits).
+  return !!(n && !/^PLAYER\d{4}$/.test(n));
+}
+
+function saveGoName() {
+  const input = document.getElementById('go-name-input');
+  if (!input) return;
+  const name = (input.value || '').trim().toUpperCase().replace(/[^A-Z0-9_]/g, '').slice(0, 12);
+  if (!name) return;
+  localStorage.setItem('player_name', name);
+  localStorage.setItem('name_is_custom', '1');
+  const row = document.getElementById('go-name-row');
+  if (row) row.style.display = 'none';
+}
+
 function savePlayerName() {
   const input = document.getElementById('lb-name-input');
   if (!input) return;
   const name = (input.value || '').trim().toUpperCase().replace(/[^A-Z0-9_]/g, '').slice(0, 12);
   if (!name) return;
   localStorage.setItem('player_name', name);
+  localStorage.setItem('name_is_custom', '1');
   input.value = name;
   input.style.borderColor = 'rgba(0,255,204,.4)';
   setTimeout(() => input.style.borderColor = 'rgba(255,255,255,.1)', 1000);
+  const goRow = document.getElementById('go-name-row');
+  if (goRow) goRow.style.display = 'none';
   buildLeaderboard();
 }
 
@@ -3026,7 +3084,7 @@ async function buildLeaderboard() {
 }
 
 async function saveGlobalScore(score, worldName, worldEmoji) {
-  const name = localStorage.getItem('player_name') || 'PLAYER';
+  const name = getPlayerName();
   const lv = LevelSys.getCurrentLevel().lv;
   await FB.submitScore(name, score, worldName, worldEmoji, lv);
   buildLeaderboard();
