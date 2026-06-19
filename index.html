@@ -2283,6 +2283,9 @@ function tap() {
   const tc = (blocks.length - 1) * 22 - C.height * .45;
   if (tc > camY) camY = tc;
   setTimeout(() => { dropping = false; newSlider(); }, 75);
+  // ── فحص cascade مستقل: بعد وضع أي بلاطة، إذا تطابق عرضها مع التي تحتها ──
+  // هذا يغطي الحالة التي يضع فيها اللاعب بلاطة بعد تفجير streak مباشرة
+  setTimeout(() => _checkCascadeAfterClear(), 200);
 }
 
 function spawnCuts(x, w, y, col) {
@@ -2420,9 +2423,90 @@ function _triggerCleanScreen() {
     banner.style.opacity = '0';
     setTimeout(() => banner.remove(), 500);
     screenFlash('rgba(0,255,204,0.10)');
+    // ── فحص cascade: إذا البلاطة الجديدة تطابق ما تحتها → نفجر تلقائياً ──
+    _checkCascadeAfterClear();
   }, 1100);
 
   updHUD();
+}
+
+// ── CASCADE AFTER CLEAR ─────────────────────────────────────────────────────
+// بعد كل تفجير streak، إذا البلاطة الجديدة (القمة الحالية) تطابق عرض التي
+// تحتها مباشرة → نفجرهم فوراً بدون انتظار 3 streak جديد.
+// يمتد الفحص لأسفل بشكل متسلسل (chain) حتى يختلف العرض.
+function _checkCascadeAfterClear() {
+  if (blocks.length < 2) return;
+  const topW = blocks[blocks.length - 1].w;
+  if (Math.abs(blocks[blocks.length - 2].w - topW) >= 0.5) return;
+
+  // وجدنا تطابق → احسب كم بلاطة متشابهة العرض من القمة للأسفل
+  let removeCount = 0;
+  for (let i = blocks.length - 1; i >= 1; i--) {
+    if (Math.abs(blocks[i].w - topW) < 0.5) removeCount++;
+    else break;
+  }
+  if (removeCount < 1) return;
+  // لا تزيل القاعدة (index 0)
+  removeCount = Math.min(removeCount, blocks.length - 1);
+
+  const sparkle = ['#ffde03', '#00ffcc', '#ffffff', '#ff3cac', '#a259ff', '#3d9fff'];
+  const erased = blocks.slice(blocks.length - removeCount);
+  const erasedCamY = camY;
+
+  blocks.splice(blocks.length - removeCount, removeCount);
+  camY = Math.max(0, camY - removeCount * 22);
+  GS.streak = 0;
+
+  screenFlash('rgba(0,255,204,0.20)');
+
+  erased.slice().reverse().forEach((b, n) => {
+    setTimeout(() => {
+      Explosion.burst(b.x + b.w / 2, b.y - 22 + erasedCamY, b.color, 40, {
+        palette: sparkle,
+        ringColor: '0,255,204',
+        ringColor2: '255,222,3',
+        ringSize: 130,
+        power: 1.1
+      });
+      triggerShake(8);
+      SFX.boom(); Haptic.perfect();
+    }, n * 90);
+  });
+
+  setTimeout(() => {
+    const mid = erased[Math.floor(erased.length / 2)];
+    Explosion.burst(mid.x + mid.w / 2, mid.y - 22 + erasedCamY - 15, '#00ffcc', 50, {
+      palette: sparkle,
+      ringColor: '255,222,3',
+      ringColor2: '0,255,204',
+      ringSize: 170,
+      power: 1.2
+    });
+    triggerShake(12);
+    SFX.perfect(); Haptic.newbest && Haptic.newbest();
+  }, removeCount * 90 + 50);
+
+  const banner = document.createElement('div');
+  banner.innerHTML = `
+    <div style="font-family:'Black Ops One',monospace;font-size:clamp(20px,5vw,32px);letter-spacing:4px;
+      background:linear-gradient(135deg,var(--c1),var(--c3));-webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;filter:drop-shadow(0 0 14px rgba(0,255,204,.9));
+      animation:perfectBounce .4s cubic-bezier(.23,1.6,.4,1) both;">⚡ CHAIN × ${removeCount}!</div>
+    <div style="font-size:12px;letter-spacing:5px;color:rgba(255,255,255,.4);margin-top:5px;
+      animation:fadeUp .4s .15s both;">CHAIN CLEAR!</div>`;
+  Object.assign(banner.style, {
+    position:'fixed', top:'63%', left:'50%',
+    transform:'translate(-50%,-50%)',
+    textAlign:'center', zIndex:'50',
+    pointerEvents:'none', opacity:'1', transition:'opacity .5s'
+  });
+  document.body.appendChild(banner);
+  setTimeout(() => { banner.style.opacity = '0'; setTimeout(() => banner.remove(), 500); }, 1000);
+
+  updHUD();
+
+  // فحص تسلسلي: إذا بعد الإزالة أيضاً فيه تطابق، نفجر مجدداً
+  setTimeout(() => _checkCascadeAfterClear(), removeCount * 90 + 200);
 }
 
 function startFever() {
