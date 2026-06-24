@@ -2395,11 +2395,11 @@ function tap() {
     screenFlash('rgba(0,255,204,0.18)');
     triggerShake(4);
     updateMission('perfects', 1);
-    if (GS.streak >= 6 && !GS.fever) startFever();
+    if (GS.streak >= 5 && !GS.fever) startFever();
     updHUD(); // show live streak counter (1, 2, 3...) immediately
 
-    // ── CLEAN SCREEN: كل 3 perfect متتالية تنفجر ──
-    if (GS.streak % 3 === 0) {
+    // ── CLEAN SCREEN at streak 3+ (erase last 3 blocks) ──
+    if (GS.streak === 3) {
       _triggerCleanScreen();
     }
   } else {
@@ -2476,9 +2476,15 @@ function _triggerCleanScreen() {
   // player with a satisfying cascade and keeps the tower from piling up
   // indefinitely; the falling-speed curve (capped separately) still keeps
   // demanding more precision as the run goes on, regardless of tower height.
-  // احذف آخر 3 بلاطات دائماً (هي الـ 3 perfect التي سبّبت الانفجار)
-  const removeCount = Math.min(3, blocks.length - 1);
+  let removeCount = Math.min(3, Math.max(0, blocks.length - 1));
   if (removeCount === 0) { GS.streak = 0; return; }
+  const matchWidth = blocks[blocks.length - 1].w;
+  while (
+    removeCount < blocks.length - 1 &&
+    Math.abs(blocks[blocks.length - removeCount - 1].w - matchWidth) < 0.5
+  ) {
+    removeCount++;
+  }
 
   const sparkle = ['#ffde03', '#00ffcc', '#ffffff', '#ff3cac', '#a259ff', '#3d9fff'];
 
@@ -2488,9 +2494,10 @@ function _triggerCleanScreen() {
 
   // ── STATE CHANGES happen immediately (synchronously) — no race with gameplay ──
   blocks.splice(blocks.length - removeCount, removeCount);
-  // تحديث y لكل البلاطات المتبقية بعد الحذف
   blocks.forEach((b, i) => { b.y = gY() - i * BLOCK_H; });
   GS.streak = 0;
+  // السلايدر القادم بنفس عرض القمة الجديدة (مكافأة للاعب الشاطر)
+  if (blocks.length >= 1) _nextSliderW = blocks[blocks.length - 1].w;
 
   // Big bright flash for the 3/3 clear moment
   screenFlash('rgba(255,222,3,0.22)');
