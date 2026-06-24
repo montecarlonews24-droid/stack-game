@@ -2417,9 +2417,6 @@ function tap() {
   const tc = (blocks.length - 1) * 32 - C.height * .45;
   if (tc > camY) camY = tc;
   setTimeout(() => { dropping = false; newSlider(); }, 75);
-  // ── فحص cascade مستقل: بعد وضع أي بلاطة، إذا تطابق عرضها مع التي تحتها ──
-  // هذا يغطي الحالة التي يضع فيها اللاعب بلاطة بعد تفجير streak مباشرة
-  setTimeout(() => _checkCascadeAfterClear(), 200);
 }
 
 function spawnCuts(x, w, y, col) {
@@ -2496,6 +2493,8 @@ function _triggerCleanScreen() {
 
   // ── STATE CHANGES happen immediately (synchronously) — no race with gameplay ──
   blocks.splice(blocks.length - removeCount, removeCount);
+  // إعادة حساب مواضع y لكل البلاطات بعد الحذف (ضروري لمنع التداخل)
+  blocks.forEach((b, i) => { b.y = gY() - i * 32; });
   camY = Math.max(0, camY - removeCount * 32);
   GS.streak = 0;
 
@@ -2557,6 +2556,8 @@ function _triggerCleanScreen() {
     banner.style.opacity = '0';
     setTimeout(() => banner.remove(), 500);
     screenFlash('rgba(0,255,204,0.10)');
+    // تحديث موضع السلايدر ليتطابق مع ارتفاع البرج الجديد
+    if (state === 'play') slider.y = bY(blocks.length);
     // ── فحص cascade: إذا البلاطة الجديدة تطابق ما تحتها → نفجر تلقائياً ──
     _checkCascadeAfterClear();
   }, 1100);
@@ -2565,30 +2566,39 @@ function _triggerCleanScreen() {
 }
 
 // ── CASCADE AFTER CLEAR ─────────────────────────────────────────────────────
-// بعد كل تفجير streak، إذا البلاطة الجديدة (القمة الحالية) تطابق عرض التي
-// تحتها مباشرة → نفجرهم فوراً بدون انتظار 3 streak جديد.
+// يُفحص فقط من _triggerCleanScreen (بعد تفجير الـ streak).
+// إذا البلاطة التي تحت القمة الحالية تطابقها عرضاً → نفجرهم بدون streak جديد.
 // يمتد الفحص لأسفل بشكل متسلسل (chain) حتى يختلف العرض.
+// ملاحظة: لا نزيل البلاطة العليا أبداً (هي البلاطة التي وضعها اللاعب للتو).
 function _checkCascadeAfterClear() {
-  if (blocks.length < 2) return;
+  // نحتاج على الأقل 3 بلاطات: القاعدة + بلاطة تحت القمة + القمة
+  if (blocks.length < 3) return;
+  // نفحص فقط البلاطات من index 1 حتى blocks.length-2 (لا نلمس القمة ولا القاعدة)
   const topW = blocks[blocks.length - 1].w;
+  // إذا البلاطة التي تحت القمة مباشرة (index length-2) لا تتطابق → لا cascade
   if (Math.abs(blocks[blocks.length - 2].w - topW) >= 0.5) return;
 
-  // وجدنا تطابق → احسب كم بلاطة متشابهة العرض من القمة للأسفل
+  // وجدنا تطابق → احسب كم بلاطة متشابهة من (length-2) للأسفل (لا نمس القمة)
   let removeCount = 0;
-  for (let i = blocks.length - 1; i >= 1; i--) {
+  for (let i = blocks.length - 2; i >= 1; i--) {
     if (Math.abs(blocks[i].w - topW) < 0.5) removeCount++;
     else break;
   }
   if (removeCount < 1) return;
-  // لا تزيل القاعدة (index 0)
-  removeCount = Math.min(removeCount, blocks.length - 1);
+  // لا تزيل القاعدة (index 0)، ولا القمة (index length-1)
+  removeCount = Math.min(removeCount, blocks.length - 2);
 
   const sparkle = ['#ffde03', '#00ffcc', '#ffffff', '#ff3cac', '#a259ff', '#3d9fff'];
-  const erased = blocks.slice(blocks.length - removeCount);
+  // الإزالة من (length-2) للأسفل بمقدار removeCount (لا تمس القمة)
+  const removeStart = blocks.length - 1 - removeCount;
+  const erased = blocks.slice(removeStart, blocks.length - 1);
   const erasedCamY = camY;
 
-  blocks.splice(blocks.length - removeCount, removeCount);
+  blocks.splice(removeStart, removeCount);
   camY = Math.max(0, camY - removeCount * 32);
+  // تصحيح موضع القمة الجديدة وموضع السلايدر بعد الإزالة
+  const newTopIdx = blocks.length - 1;
+  blocks[newTopIdx].y = gY() - newTopIdx * 32;
   GS.streak = 0;
 
   screenFlash('rgba(0,255,204,0.20)');
@@ -2636,6 +2646,9 @@ function _checkCascadeAfterClear() {
   });
   document.body.appendChild(banner);
   setTimeout(() => { banner.style.opacity = '0'; setTimeout(() => banner.remove(), 500); }, 1000);
+
+  // تحديث موضع السلايدر ليتطابق مع ارتفاع البرج الجديد
+  if (state === 'play') slider.y = bY(blocks.length);
 
   updHUD();
 
