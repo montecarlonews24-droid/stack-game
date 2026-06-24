@@ -2388,25 +2388,32 @@ function tap() {
   updateMission('coins', coinEarned);
 
   if (perf) {
-    GS.perfects++; GS.streak++;
-    if (GS.streak > GS.bestStreak) GS.bestStreak = GS.streak;
+    GS.perfects++;
     showPerfect(); SFX.perfect(); Haptic.perfect();
     showPtsPopup(disp(pts), true);
     screenFlash('rgba(0,255,204,0.18)');
     triggerShake(4);
     updateMission('perfects', 1);
-    if (GS.streak >= 5 && !GS.fever) startFever();
-    updHUD(); // show live streak counter (1, 2, 3...) immediately
-
-    // ── CLEAN SCREEN at streak 3+ (erase last 3 blocks) ──
-    if (GS.streak === 3) {
-      _triggerCleanScreen();
-    }
   } else {
     if (GS.fever) stopFever();
-    GS.streak = 0; SFX.stack(); Haptic.stack();
+    GS.streak = 0; // خطأ → تصفير الدورة
+    SFX.stack(); Haptic.stack();
     showPtsPopup(disp(pts), false);
     screenFlash('rgba(255,255,255,0.05)');
+  }
+
+  // كل بلاطة ناجحة تزيد streak
+  GS.streak++;
+  if (GS.streak > GS.bestStreak) GS.bestStreak = GS.streak;
+
+  // الموضع في الدورة: 1→أول, 2→ثاني, 0→ثالث+BOOM
+  const _pos = GS.streak % 3;
+  if (_pos === 0 && !GS.fever) startFever(); // fever بعد 3 دورات متتالية
+  updHUD();
+
+  // البلاطة الثالثة في الدورة → انفجار
+  if (_pos === 0) {
+    _triggerCleanScreen();
   }
 
   if (GS.score > GS.best) { GS.best = GS.score; localStorage.setItem('stack_best', GS.best); }
@@ -2850,12 +2857,16 @@ function updHUD() {
   document.getElementById('best-num').textContent = disp(GS.best);
   const sb = document.getElementById('set-best'); if (sb) sb.textContent = disp(GS.best);
   const sw = document.getElementById('streak');
-  if (GS.streak >= 1) {
+  // الموضع في الدورة: streak%3 → 1=أول, 2=ثاني, 0=ثالث
+  const _streakPos = GS.streak % 3; // 1, 2, أو 0(=3)
+  const _displayPos = _streakPos === 0 && GS.streak > 0 ? 3 : _streakPos;
+  if (_displayPos >= 2) {
+    // نعرض فقط من البلاطة الثانية
     sw.classList.add('show');
     sw.classList.remove('lvl1','lvl2','lvl3');
-    sw.classList.add('lvl' + Math.min(GS.streak, 3));
-    document.getElementById('streak-n').textContent = GS.streak + '/3';
-    for (let i = 0; i < 5; i++) document.getElementById('sp' + i).classList.toggle('on', i < Math.min(GS.streak, 5));
+    sw.classList.add('lvl' + _displayPos);
+    document.getElementById('streak-n').textContent = _displayPos + '/3';
+    for (let i = 0; i < 3; i++) document.getElementById('sp' + i).classList.toggle('on', i < _displayPos);
   } else {
     sw.classList.remove('show','lvl1','lvl2','lvl3');
   }
