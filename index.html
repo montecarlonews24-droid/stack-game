@@ -2494,10 +2494,9 @@ function _triggerCleanScreen() {
 
   // ── STATE CHANGES happen immediately (synchronously) — no race with gameplay ──
   blocks.splice(blocks.length - removeCount, removeCount);
+  // تحديث y لكل البلاطات المتبقية بعد الحذف
   blocks.forEach((b, i) => { b.y = gY() - i * BLOCK_H; });
   GS.streak = 0;
-  // السلايدر القادم بنفس عرض القمة الجديدة (مكافأة للاعب الشاطر)
-  if (blocks.length >= 1) _nextSliderW = blocks[blocks.length - 1].w;
 
   // Big bright flash for the 3/3 clear moment
   screenFlash('rgba(255,222,3,0.22)');
