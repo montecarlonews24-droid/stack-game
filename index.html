@@ -2280,7 +2280,7 @@ let selectedWorldId = 0;
 // ── CANVAS ────────────────────────────────
 const C = document.getElementById('gc'), ctx = C.getContext('2d');
 function rsz() { C.width = innerWidth; C.height = innerHeight; }
-rsz(); window.addEventListener('resize', () => { rsz(); if (state === 'play') camY = 0; });
+rsz(); window.addEventListener('resize', () => { rsz(); });
 
 // ── ENGINE STATE ──────────────────────────
 let state = 'menu', blocks = [], slider = {}, camY = 0, dropping = false;
@@ -2291,8 +2291,11 @@ for (let i = 0; i < 130; i++)
   bgStars.push({ x:Math.random(), y:Math.random(), r:.4+Math.random()*1.1, a:.08+Math.random()*.35, tw:Math.random()*Math.PI*2, ts:.4+Math.random()*.8 });
 
 function cw()  { return getWorld(GS.worldId, GS.best); }
-function gY()  { return C.height - 80; }
-function bY(i) { return gY() - i * 32; }
+const BLOCK_H = 48; // ارتفاع البلاطة (أكبر = أوضح + فراغ كافي)
+// bY(i): الموضع Y للبلاطة i في فضاء العالم
+// القاعدة (i=0) عند أسفل الشاشة، كل بلاطة تعلو BLOCK_H فوق السابقة
+function gY()  { return C.height - 100; }
+function bY(i) { return gY() - i * BLOCK_H; }
 
 // ── INIT GAME ─────────────────────────────
 function initGame(fresh = true) {
@@ -2414,14 +2417,12 @@ function tap() {
   // XP: 1 per stack, 3 per perfect
   LevelSys.addXP(perf ? 3 : 1);
   updHUD(); animScore();
-  const tc = (blocks.length - 1) * 32 - C.height * .45;
-  if (tc > camY) camY = tc;
   setTimeout(() => { dropping = false; newSlider(); }, 75);
 }
 
 function spawnCuts(x, w, y, col) {
   for (let i = 0; i < 14; i++)
-    particles.push({ x: x + Math.random() * w, y: y + 16, vx: (Math.random() - .5) * 5, vy: -2 - Math.random() * 5, life: 1, col, sz: 3 + Math.random() * 6 });
+    particles.push({ x: x + Math.random() * w, y: y + BLOCK_H / 3, vx: (Math.random() - .5) * 5, vy: -2 - Math.random() * 5, life: 1, col, sz: 3 + Math.random() * 6 });
 }
 
 // ── GAME OVER ─────────────────────────────
@@ -2431,7 +2432,7 @@ function gameOver() {
   screenFlash('rgba(255,60,172,0.2)');
   // Big explosion at top block
   const top = blocks[blocks.length - 1];
-  Explosion.burst(top.x + top.w / 2, top.y - 32 + camY, top.color, 50);
+  Explosion.burst(top.x + top.w / 2, top.y - BLOCK_H + camY, top.color, 50);
   clearAllPU(); stopFever();
   setTimeout(showGameOver, 480);
 }
@@ -2444,7 +2445,7 @@ function showMistakeOverlay() {
   triggerShake(8);
 
   // Small explosion where the slider fell
-  Explosion.burst(slider.x + slider.w / 2, slider.y - 32 + camY, slider.color, 28, {
+  Explosion.burst(slider.x + slider.w / 2, slider.y - BLOCK_H + camY, slider.color, 28, {
     palette: ['#ff3cac', '#ffffff'],
     ringColor: '255,60,172',
     ringSize: 90
@@ -2493,9 +2494,8 @@ function _triggerCleanScreen() {
 
   // ── STATE CHANGES happen immediately (synchronously) — no race with gameplay ──
   blocks.splice(blocks.length - removeCount, removeCount);
-  // إعادة حساب مواضع y لكل البلاطات بعد الحذف (ضروري لمنع التداخل)
-  blocks.forEach((b, i) => { b.y = gY() - i * 32; });
-  camY = Math.max(0, camY - removeCount * 32);
+  // تحديث y لكل البلاطات المتبقية بعد الحذف
+  blocks.forEach((b, i) => { b.y = gY() - i * BLOCK_H; });
   GS.streak = 0;
 
   // Big bright flash for the 3/3 clear moment
@@ -2505,7 +2505,7 @@ function _triggerCleanScreen() {
   // Cascading explosion bursts — top block first, each with shake + boom
   erased.slice().reverse().forEach((b, n) => {
     setTimeout(() => {
-      Explosion.burst(b.x + b.w / 2, b.y - 32 + erasedCamY, b.color, 45, {
+      Explosion.burst(b.x + b.w / 2, b.y - BLOCK_H + erasedCamY, b.color, 45, {
         palette: sparkle,
         ringColor: '255,222,3',
         ringColor2: '0,255,204',
@@ -2520,7 +2520,7 @@ function _triggerCleanScreen() {
   // Big finishing burst dead-center of where the cleared stack was
   setTimeout(() => {
     const mid = erased[Math.floor(erased.length / 2)];
-    Explosion.burst(mid.x + mid.w / 2, mid.y - 32 + erasedCamY - 20, '#ffde03', 60, {
+    Explosion.burst(mid.x + mid.w / 2, mid.y - BLOCK_H + erasedCamY - 20, '#ffde03', 60, {
       palette: sparkle,
       ringColor: '0,255,204',
       ringColor2: '255,60,172',
@@ -2556,9 +2556,7 @@ function _triggerCleanScreen() {
     banner.style.opacity = '0';
     setTimeout(() => banner.remove(), 500);
     screenFlash('rgba(0,255,204,0.10)');
-    // تحديث موضع السلايدر ليتطابق مع ارتفاع البرج الجديد
     if (state === 'play') slider.y = bY(blocks.length);
-    // ── فحص cascade: إذا البلاطة الجديدة تطابق ما تحتها → نفجر تلقائياً ──
     _checkCascadeAfterClear();
   }, 1100);
 
@@ -2566,46 +2564,37 @@ function _triggerCleanScreen() {
 }
 
 // ── CASCADE AFTER CLEAR ─────────────────────────────────────────────────────
-// يُفحص فقط من _triggerCleanScreen (بعد تفجير الـ streak).
-// إذا البلاطة التي تحت القمة الحالية تطابقها عرضاً → نفجرهم بدون streak جديد.
+// بعد كل تفجير streak، إذا البلاطة الجديدة (القمة الحالية) تطابق عرض التي
+// تحتها مباشرة → نفجرهم فوراً بدون انتظار 3 streak جديد.
 // يمتد الفحص لأسفل بشكل متسلسل (chain) حتى يختلف العرض.
-// ملاحظة: لا نزيل البلاطة العليا أبداً (هي البلاطة التي وضعها اللاعب للتو).
 function _checkCascadeAfterClear() {
-  // نحتاج على الأقل 3 بلاطات: القاعدة + بلاطة تحت القمة + القمة
-  if (blocks.length < 3) return;
-  // نفحص فقط البلاطات من index 1 حتى blocks.length-2 (لا نلمس القمة ولا القاعدة)
+  if (blocks.length < 2) return;
   const topW = blocks[blocks.length - 1].w;
-  // إذا البلاطة التي تحت القمة مباشرة (index length-2) لا تتطابق → لا cascade
   if (Math.abs(blocks[blocks.length - 2].w - topW) >= 0.5) return;
 
-  // وجدنا تطابق → احسب كم بلاطة متشابهة من (length-2) للأسفل (لا نمس القمة)
+  // وجدنا تطابق → احسب كم بلاطة متشابهة العرض من القمة للأسفل
   let removeCount = 0;
-  for (let i = blocks.length - 2; i >= 1; i--) {
+  for (let i = blocks.length - 1; i >= 1; i--) {
     if (Math.abs(blocks[i].w - topW) < 0.5) removeCount++;
     else break;
   }
   if (removeCount < 1) return;
-  // لا تزيل القاعدة (index 0)، ولا القمة (index length-1)
-  removeCount = Math.min(removeCount, blocks.length - 2);
+  // لا تزيل القاعدة (index 0)
+  removeCount = Math.min(removeCount, blocks.length - 1);
 
   const sparkle = ['#ffde03', '#00ffcc', '#ffffff', '#ff3cac', '#a259ff', '#3d9fff'];
-  // الإزالة من (length-2) للأسفل بمقدار removeCount (لا تمس القمة)
-  const removeStart = blocks.length - 1 - removeCount;
-  const erased = blocks.slice(removeStart, blocks.length - 1);
+  const erased = blocks.slice(blocks.length - removeCount);
   const erasedCamY = camY;
 
-  blocks.splice(removeStart, removeCount);
-  camY = Math.max(0, camY - removeCount * 32);
-  // تصحيح موضع القمة الجديدة وموضع السلايدر بعد الإزالة
-  const newTopIdx = blocks.length - 1;
-  blocks[newTopIdx].y = gY() - newTopIdx * 32;
+  blocks.splice(blocks.length - removeCount, removeCount);
+  blocks.forEach((b, i) => { b.y = gY() - i * BLOCK_H; });
   GS.streak = 0;
 
   screenFlash('rgba(0,255,204,0.20)');
 
   erased.slice().reverse().forEach((b, n) => {
     setTimeout(() => {
-      Explosion.burst(b.x + b.w / 2, b.y - 32 + erasedCamY, b.color, 40, {
+      Explosion.burst(b.x + b.w / 2, b.y - BLOCK_H + erasedCamY, b.color, 40, {
         palette: sparkle,
         ringColor: '0,255,204',
         ringColor2: '255,222,3',
@@ -2619,7 +2608,7 @@ function _checkCascadeAfterClear() {
 
   setTimeout(() => {
     const mid = erased[Math.floor(erased.length / 2)];
-    Explosion.burst(mid.x + mid.w / 2, mid.y - 32 + erasedCamY - 15, '#00ffcc', 50, {
+    Explosion.burst(mid.x + mid.w / 2, mid.y - BLOCK_H + erasedCamY - 15, '#00ffcc', 50, {
       palette: sparkle,
       ringColor: '255,222,3',
       ringColor2: '0,255,204',
@@ -2647,12 +2636,9 @@ function _checkCascadeAfterClear() {
   document.body.appendChild(banner);
   setTimeout(() => { banner.style.opacity = '0'; setTimeout(() => banner.remove(), 500); }, 1000);
 
-  // تحديث موضع السلايدر ليتطابق مع ارتفاع البرج الجديد
   if (state === 'play') slider.y = bY(blocks.length);
-
   updHUD();
 
-  // فحص تسلسلي: إذا بعد الإزالة أيضاً فيه تطابق، نفجر مجدداً
   setTimeout(() => _checkCascadeAfterClear(), removeCount * 90 + 200);
 }
 
@@ -2715,7 +2701,7 @@ function update(dt) {
     if (slider.x > W + 10) slider.dir = -1;
     if (slider.x + slider.w < -10) slider.dir = 1;
     // Trail
-    Trail.add(slider.x, slider.y - 16, slider.w, slider.color);
+    Trail.add(slider.x, slider.y - BLOCK_H / 2, slider.w, slider.color);
   }
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i]; p.x += p.vx; p.y += p.vy; p.vy += .14; p.life -= .038;
@@ -2777,40 +2763,55 @@ function draw() {
 
   if (state === 'menu') return;
 
+  // كاميرا ذكية: البرج يبقى مرئياً دائماً
+  // قمة البرج تكون في 62% من أعلى الشاشة (فوق المنتصف بقليل)
+  if (state === 'play' || state === 'dead') {
+    // موضع قمة البرج على الشاشة = bY(blocks.length-1) + camY - BLOCK_H
+    // نريده عند: C.height * 0.62
+    const desired = C.height * 0.62;
+    const topWorldY = bY(blocks.length - 1) - BLOCK_H;
+    camY = desired - topWorldY;
+  }
   ctx.save(); ctx.translate(shakeX, camY + shakeY);
 
   // Trail (draw behind slider)
   Trail.draw(ctx);
 
-  // Blocks
+  // Blocks — ترسم من أعلى البلاطة للأسفل بارتفاع BLOCK_H
   blocks.forEach((b, i) => {
-    if (b.y + camY > H + 30 || b.y + camY < -60) return;
-    const y = b.y - 32;
+    const y = b.y - BLOCK_H; // أعلى البلاطة
+    if (y + BLOCK_H + camY < -60 || y + camY > H + 30) return;
+    const isTop = i === blocks.length - 1;
     ctx.fillStyle = b.color; ctx.shadowColor = b.color;
-    ctx.shadowBlur = i === blocks.length - 1 ? 16 : 3;
-    rr(ctx, b.x, y, b.w, 32, 4); ctx.fill(); ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(255,255,255,.1)'; rr(ctx, b.x + 2, y + 2, b.w - 4, 7, 2); ctx.fill();
-    ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(b.x, y + 29, b.w, 3);
-    if (i === blocks.length - 1 && GS.score > 0) {
-      ctx.fillStyle = GS.fever ? 'rgba(255,222,3,.8)' : 'rgba(255,255,255,.28)';
-      ctx.font = 'bold 13px "Exo 2",sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(disp(GS.score), b.x + b.w / 2, y + 20);
+    ctx.shadowBlur = isTop ? 18 : 4;
+    rr(ctx, b.x, y, b.w, BLOCK_H, 5); ctx.fill(); ctx.shadowBlur = 0;
+    // Highlight شريط أعلى
+    ctx.fillStyle = 'rgba(255,255,255,.13)';
+    rr(ctx, b.x + 2, y + 2, b.w - 4, 9, 2); ctx.fill();
+    // Shadow شريط أسفل
+    ctx.fillStyle = 'rgba(0,0,0,.22)';
+    ctx.fillRect(b.x, y + BLOCK_H - 5, b.w, 5);
+    // Score رقم على أعلى بلاطة
+    if (isTop && GS.score > 0) {
+      ctx.fillStyle = GS.fever ? 'rgba(255,222,3,.9)' : 'rgba(255,255,255,.3)';
+      ctx.font = 'bold 14px "Exo 2",sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(disp(GS.score), b.x + b.w / 2, y + BLOCK_H / 2 + 5);
     }
   });
 
   // Slider
   if (!dropping && state === 'play') {
-    const sy = slider.y - 32;
-    ctx.fillStyle = slider.color; ctx.shadowColor = slider.color; ctx.shadowBlur = GS.fever ? 30 : 18;
-    rr(ctx, slider.x, sy, slider.w, 32, 4); ctx.fill(); ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(255,255,255,.15)'; rr(ctx, slider.x + 2, sy + 2, slider.w - 4, 7, 2); ctx.fill();
+    const sy = slider.y - BLOCK_H;
+    ctx.fillStyle = slider.color; ctx.shadowColor = slider.color; ctx.shadowBlur = GS.fever ? 32 : 22;
+    rr(ctx, slider.x, sy, slider.w, BLOCK_H, 5); ctx.fill(); ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(255,255,255,.18)'; rr(ctx, slider.x + 2, sy + 2, slider.w - 4, 9, 2); ctx.fill();
     if (GS.shield) {
       ctx.strokeStyle = 'rgba(61,159,255,.7)'; ctx.lineWidth = 2; ctx.shadowColor = '#3d9fff'; ctx.shadowBlur = 10;
-      rr(ctx, slider.x - 2, sy - 2, slider.w + 4, 26, 5); ctx.stroke(); ctx.shadowBlur = 0;
+      rr(ctx, slider.x - 2, sy - 2, slider.w + 4, BLOCK_H + 4, 6); ctx.stroke(); ctx.shadowBlur = 0;
     }
     if (GS.fever) {
       ctx.strokeStyle = `rgba(255,222,3,${.4 + .3 * Math.sin(t * 8)})`; ctx.lineWidth = 2;
-      rr(ctx, slider.x - 3, sy - 3, slider.w + 6, 28, 6); ctx.stroke();
+      rr(ctx, slider.x - 3, sy - 3, slider.w + 6, BLOCK_H + 6, 7); ctx.stroke();
     }
   }
 
@@ -2873,7 +2874,7 @@ function showPerfect() {
   // Keep the badge above the rising tower: as the topmost block climbs the
   // screen, the badge climbs with it (with a safety margin), instead of
   // sitting at a fixed spot and eventually getting covered by the blocks.
-  const topBlockScreenY = bY(blocks.length - 1) + camY;
+  const topBlockScreenY = bY(blocks.length - 1) - BLOCK_H + camY;
   const defaultTop = innerHeight * .58;   // normal resting spot, low tower
   const minTop = innerHeight * .20;       // never rise above the HUD area
   const dynamicTop = Math.max(minTop, Math.min(defaultTop, topBlockScreenY - 110));
