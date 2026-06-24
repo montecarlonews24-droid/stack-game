@@ -159,7 +159,7 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
 
 /* ── TABS ── */
 #tabs{position:relative;z-index:2;display:flex;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:4px;width:min(370px,94vw);}
-.tab{flex:1;padding:12px 6px;border-radius:13px;font-family:'Black Ops One',monospace;font-size:20px;color:rgba(255,255,255,.3);background:transparent;border:none;cursor:pointer;transition:all .2s;}
+.tab{flex:1;padding:10px 3px;border-radius:13px;font-family:'Black Ops One',monospace;font-size:17px;color:rgba(255,255,255,.3);background:transparent;border:none;cursor:pointer;transition:all .2s;}
 .tab.active{background:rgba(255,255,255,.08);color:#fff;filter:drop-shadow(0 0 6px rgba(255,255,255,0.3));}
 .tab-settings-btn{font-size:22px !important;filter:drop-shadow(0 0 6px rgba(255,255,255,0.55));color:rgba(255,255,255,0.85) !important;}
 .tab-pane{display:none;flex-direction:column;align-items:center;gap:10px;width:min(370px,94vw);position:relative;z-index:2;}
@@ -611,9 +611,11 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
     <div class="logo-line"></div>
   </div>
 
-  <!-- TABS: PLAY · 🌍 · 🏆 · 🛒 · ⚙️ -->
+  <!-- TABS: ▶ · 🎯 · ⚔️ · 🌍 · 🏆 · 🛒 · ⚙️ -->
   <div id="tabs">
     <button class="tab active" onclick="showTab('play')">▶</button>
+    <button class="tab" onclick="showTab('missions')">🎯</button>
+    <button class="tab" onclick="showTab('tournament')">⚔️</button>
     <button class="tab" onclick="showTab('worlds')">🌍</button>
     <button class="tab" onclick="showTab('lb')">🏆</button>
     <button class="tab" onclick="showTab('shop')">🛒</button>
@@ -636,23 +638,6 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
         <div id="dc-prog"><div id="dc-prog-f" style="width:0%"></div></div>
         <div id="dc-done">✅ CHALLENGE COMPLETE!</div>
       </div>
-    </div>
-
-    <!-- Daily Tournament -->
-    <div id="tourney-card">
-      <div class="tc-inner">
-        <div class="tc-header">
-          <div class="tc-badge"><span class="tc-badge-ico">⚔️</span><span class="tc-badge-txt">TOURNAMENT</span></div>
-          <div id="tc-timer">TODAY</div>
-        </div>
-        <div class="tc-rows" id="tourney-rows"></div>
-      </div>
-    </div>
-
-    <!-- Missions -->
-    <div id="missions-card">
-      <div class="mc-header"><span style="font-size:24px;">🎯</span><div class="mc-title">MISSIONS</div><div id="dm-timer"></div></div>
-      <div class="mc-list" id="mc-list"></div>
     </div>
 
     <!-- Result Card -->
@@ -699,6 +684,27 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
       <button class="gbtn" id="btn-continue" style="display:none;background:linear-gradient(135deg,#00cc88,#0088ff);color:#000;font-size:18px;box-shadow:0 0 28px rgba(0,204,136,0.5),0 8px 24px rgba(0,0,0,0.5);">▶ CONTINUE GAME</button>
       <button class="gbtn gbtn-yellow" id="btn-one-more" style="display:none;">🔥 ONE MORE GAME!</button>
       <button class="gbtn gbtn-ghost" id="btn-skip" style="display:none;">↪ Skip — No reward</button>
+    </div>
+  </div>
+
+  <!-- ═══ MISSIONS TAB ═══ -->
+  <div class="tab-pane" id="tab-missions">
+    <div id="missions-card" style="width:100%;">
+      <div class="mc-header"><span style="font-size:24px;">🎯</span><div class="mc-title">MISSIONS</div><div id="dm-timer"></div></div>
+      <div class="mc-list" id="mc-list"></div>
+    </div>
+  </div>
+
+  <!-- ═══ TOURNAMENT TAB ═══ -->
+  <div class="tab-pane" id="tab-tournament">
+    <div id="tourney-card" style="width:100%;">
+      <div class="tc-inner">
+        <div class="tc-header">
+          <div class="tc-badge"><span class="tc-badge-ico">⚔️</span><span class="tc-badge-txt">TOURNAMENT</span></div>
+          <div id="tc-timer">TODAY</div>
+        </div>
+        <div class="tc-rows" id="tourney-rows"></div>
+      </div>
     </div>
   </div>
 
@@ -2931,14 +2937,17 @@ function buildWorldGrid() {
 
 // ── TABS ──────────────────────────────────
 function showTab(id) {
+  const TAB_IDS = ['play','missions','tournament','worlds','lb','shop','settings'];
   document.querySelectorAll('.tab').forEach((t, i) => {
-    t.classList.toggle('active', ['play','worlds','lb','shop','settings'][i] === id);
+    t.classList.toggle('active', TAB_IDS[i] === id);
   });
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
-  if (id === 'lb')       buildLeaderboard();
-  if (id === 'worlds')   buildWorldGrid();
-  if (id === 'shop')     buildShop();
+  if (id === 'lb')         buildLeaderboard();
+  if (id === 'worlds')     buildWorldGrid();
+  if (id === 'shop')       buildShop();
+  if (id === 'missions')   buildMissions();
+  if (id === 'tournament') Tournament.build();
 }
 
 // ── BUTTONS ───────────────────────────────
