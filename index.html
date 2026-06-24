@@ -2292,7 +2292,7 @@ for (let i = 0; i < 130; i++)
 
 function cw()  { return getWorld(GS.worldId, GS.best); }
 function gY()  { return C.height - 80; }
-function bY(i) { return gY() - i * 22; }
+function bY(i) { return gY() - i * 32; }
 
 // ── INIT GAME ─────────────────────────────
 function initGame(fresh = true) {
@@ -2414,7 +2414,7 @@ function tap() {
   // XP: 1 per stack, 3 per perfect
   LevelSys.addXP(perf ? 3 : 1);
   updHUD(); animScore();
-  const tc = (blocks.length - 1) * 22 - C.height * .45;
+  const tc = (blocks.length - 1) * 32 - C.height * .45;
   if (tc > camY) camY = tc;
   setTimeout(() => { dropping = false; newSlider(); }, 75);
   // ── فحص cascade مستقل: بعد وضع أي بلاطة، إذا تطابق عرضها مع التي تحتها ──
@@ -2424,7 +2424,7 @@ function tap() {
 
 function spawnCuts(x, w, y, col) {
   for (let i = 0; i < 14; i++)
-    particles.push({ x: x + Math.random() * w, y: y + 11, vx: (Math.random() - .5) * 5, vy: -2 - Math.random() * 5, life: 1, col, sz: 3 + Math.random() * 6 });
+    particles.push({ x: x + Math.random() * w, y: y + 16, vx: (Math.random() - .5) * 5, vy: -2 - Math.random() * 5, life: 1, col, sz: 3 + Math.random() * 6 });
 }
 
 // ── GAME OVER ─────────────────────────────
@@ -2434,7 +2434,7 @@ function gameOver() {
   screenFlash('rgba(255,60,172,0.2)');
   // Big explosion at top block
   const top = blocks[blocks.length - 1];
-  Explosion.burst(top.x + top.w / 2, top.y - 22 + camY, top.color, 50);
+  Explosion.burst(top.x + top.w / 2, top.y - 32 + camY, top.color, 50);
   clearAllPU(); stopFever();
   setTimeout(showGameOver, 480);
 }
@@ -2447,7 +2447,7 @@ function showMistakeOverlay() {
   triggerShake(8);
 
   // Small explosion where the slider fell
-  Explosion.burst(slider.x + slider.w / 2, slider.y - 22 + camY, slider.color, 28, {
+  Explosion.burst(slider.x + slider.w / 2, slider.y - 32 + camY, slider.color, 28, {
     palette: ['#ff3cac', '#ffffff'],
     ringColor: '255,60,172',
     ringSize: 90
@@ -2496,7 +2496,7 @@ function _triggerCleanScreen() {
 
   // ── STATE CHANGES happen immediately (synchronously) — no race with gameplay ──
   blocks.splice(blocks.length - removeCount, removeCount);
-  camY = Math.max(0, camY - removeCount * 22);
+  camY = Math.max(0, camY - removeCount * 32);
   GS.streak = 0;
 
   // Big bright flash for the 3/3 clear moment
@@ -2506,7 +2506,7 @@ function _triggerCleanScreen() {
   // Cascading explosion bursts — top block first, each with shake + boom
   erased.slice().reverse().forEach((b, n) => {
     setTimeout(() => {
-      Explosion.burst(b.x + b.w / 2, b.y - 22 + erasedCamY, b.color, 45, {
+      Explosion.burst(b.x + b.w / 2, b.y - 32 + erasedCamY, b.color, 45, {
         palette: sparkle,
         ringColor: '255,222,3',
         ringColor2: '0,255,204',
@@ -2521,7 +2521,7 @@ function _triggerCleanScreen() {
   // Big finishing burst dead-center of where the cleared stack was
   setTimeout(() => {
     const mid = erased[Math.floor(erased.length / 2)];
-    Explosion.burst(mid.x + mid.w / 2, mid.y - 22 + erasedCamY - 20, '#ffde03', 60, {
+    Explosion.burst(mid.x + mid.w / 2, mid.y - 32 + erasedCamY - 20, '#ffde03', 60, {
       palette: sparkle,
       ringColor: '0,255,204',
       ringColor2: '255,60,172',
@@ -2588,14 +2588,14 @@ function _checkCascadeAfterClear() {
   const erasedCamY = camY;
 
   blocks.splice(blocks.length - removeCount, removeCount);
-  camY = Math.max(0, camY - removeCount * 22);
+  camY = Math.max(0, camY - removeCount * 32);
   GS.streak = 0;
 
   screenFlash('rgba(0,255,204,0.20)');
 
   erased.slice().reverse().forEach((b, n) => {
     setTimeout(() => {
-      Explosion.burst(b.x + b.w / 2, b.y - 22 + erasedCamY, b.color, 40, {
+      Explosion.burst(b.x + b.w / 2, b.y - 32 + erasedCamY, b.color, 40, {
         palette: sparkle,
         ringColor: '0,255,204',
         ringColor2: '255,222,3',
@@ -2609,7 +2609,7 @@ function _checkCascadeAfterClear() {
 
   setTimeout(() => {
     const mid = erased[Math.floor(erased.length / 2)];
-    Explosion.burst(mid.x + mid.w / 2, mid.y - 22 + erasedCamY - 15, '#00ffcc', 50, {
+    Explosion.burst(mid.x + mid.w / 2, mid.y - 32 + erasedCamY - 15, '#00ffcc', 50, {
       palette: sparkle,
       ringColor: '255,222,3',
       ringColor2: '0,255,204',
@@ -2702,7 +2702,7 @@ function update(dt) {
     if (slider.x > W + 10) slider.dir = -1;
     if (slider.x + slider.w < -10) slider.dir = 1;
     // Trail
-    Trail.add(slider.x, slider.y - 11, slider.w, slider.color);
+    Trail.add(slider.x, slider.y - 16, slider.w, slider.color);
   }
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i]; p.x += p.vx; p.y += p.vy; p.vy += .14; p.life -= .038;
@@ -2772,24 +2772,24 @@ function draw() {
   // Blocks
   blocks.forEach((b, i) => {
     if (b.y + camY > H + 30 || b.y + camY < -60) return;
-    const y = b.y - 22;
+    const y = b.y - 32;
     ctx.fillStyle = b.color; ctx.shadowColor = b.color;
     ctx.shadowBlur = i === blocks.length - 1 ? 16 : 3;
-    rr(ctx, b.x, y, b.w, 22, 4); ctx.fill(); ctx.shadowBlur = 0;
+    rr(ctx, b.x, y, b.w, 32, 4); ctx.fill(); ctx.shadowBlur = 0;
     ctx.fillStyle = 'rgba(255,255,255,.1)'; rr(ctx, b.x + 2, y + 2, b.w - 4, 7, 2); ctx.fill();
-    ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(b.x, y + 19, b.w, 3);
+    ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(b.x, y + 29, b.w, 3);
     if (i === blocks.length - 1 && GS.score > 0) {
       ctx.fillStyle = GS.fever ? 'rgba(255,222,3,.8)' : 'rgba(255,255,255,.28)';
       ctx.font = 'bold 13px "Exo 2",sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(disp(GS.score), b.x + b.w / 2, y + 15);
+      ctx.fillText(disp(GS.score), b.x + b.w / 2, y + 20);
     }
   });
 
   // Slider
   if (!dropping && state === 'play') {
-    const sy = slider.y - 22;
+    const sy = slider.y - 32;
     ctx.fillStyle = slider.color; ctx.shadowColor = slider.color; ctx.shadowBlur = GS.fever ? 30 : 18;
-    rr(ctx, slider.x, sy, slider.w, 22, 4); ctx.fill(); ctx.shadowBlur = 0;
+    rr(ctx, slider.x, sy, slider.w, 32, 4); ctx.fill(); ctx.shadowBlur = 0;
     ctx.fillStyle = 'rgba(255,255,255,.15)'; rr(ctx, slider.x + 2, sy + 2, slider.w - 4, 7, 2); ctx.fill();
     if (GS.shield) {
       ctx.strokeStyle = 'rgba(61,159,255,.7)'; ctx.lineWidth = 2; ctx.shadowColor = '#3d9fff'; ctx.shadowBlur = 10;
