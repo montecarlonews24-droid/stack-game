@@ -209,6 +209,15 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
 .mc-bar-f{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--c5),var(--c2));transition:width .4s;}
 .mc-pts{font-family:'Black Ops One',monospace;font-size:15px;color:var(--c5);}
 .mc-check{font-size:22px;}
+/* ── DAILY MISSIONS ── */
+#dm-timer{font-size:11px;letter-spacing:2px;color:rgba(255,222,3,.45);font-family:'Black Ops One',monospace;margin-left:auto;}
+.mc-section-lbl{font-size:10px;letter-spacing:4px;color:rgba(255,255,255,.2);padding:8px 16px 2px;font-family:'Black Ops One',monospace;}
+.mc-section-lbl.gold{color:rgba(255,222,3,.4);}
+.mc-row.daily{border-color:rgba(255,222,3,.12);}
+.mc-row.daily .mc-bar-f{background:linear-gradient(90deg,var(--c3),#ff8800);}
+.mc-row.daily .mc-pts{color:var(--c3);}
+.mc-row.daily.done{border-color:rgba(255,222,3,.28);background:rgba(255,222,3,.03);}
+.dm-all-done{text-align:center;padding:9px 0 3px;font-family:'Black Ops One',monospace;font-size:13px;color:var(--c3);letter-spacing:3px;}
 
 /* ── TOURNAMENT ── */
 #tourney-card{width:100%;background:linear-gradient(135deg,rgba(255,60,172,.06),rgba(162,89,255,.04));border:1px solid rgba(255,60,172,.2);border-radius:18px;overflow:hidden;position:relative;}
@@ -642,7 +651,7 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
 
     <!-- Missions -->
     <div id="missions-card">
-      <div class="mc-header"><span style="font-size:24px;">🎯</span><div class="mc-title">MISSIONS</div></div>
+      <div class="mc-header"><span style="font-size:24px;">🎯</span><div class="mc-title">MISSIONS</div><div id="dm-timer"></div></div>
       <div class="mc-list" id="mc-list"></div>
     </div>
 
@@ -1396,6 +1405,85 @@ const MISSIONS = [
 function getMProg(m)   { return parseInt(localStorage.getItem('mp_' + m.id) || '0'); }
 function isMDone(m)    { return getMProg(m) >= m.target; }
 
+// ── DAILY MISSIONS ────────────────────────
+const DAILY_POOL = [
+  { id:'dp1',  ico:'🎮', name:'Quick Player',   desc:'Play 3 games today',       target:3,   type:'games',    reward:20 },
+  { id:'dp2',  ico:'🔥', name:'Perfectionist',  desc:'Get 10 Perfects today',    target:10,  type:'perfects', reward:30 },
+  { id:'dp3',  ico:'⚡', name:'High Scorer',    desc:'Score 50 points today',    target:50,  type:'score',    reward:25 },
+  { id:'dp4',  ico:'💎', name:'Streak Chaser',  desc:'Reach a 3x Streak today',  target:3,   type:'streak',   reward:20 },
+  { id:'dp5',  ico:'🌍', name:'World Hopper',   desc:'Play 2 different worlds',  target:2,   type:'worlds',   reward:25 },
+  { id:'dp6',  ico:'🪙', name:'Coin Magnet',    desc:'Earn 30 coins today',      target:30,  type:'coins',    reward:15 },
+  { id:'dp7',  ico:'🏃', name:'Dedicated',      desc:'Play 5 games today',       target:5,   type:'games',    reward:35 },
+  { id:'dp8',  ico:'🌟', name:'Star Player',    desc:'Get 15 Perfects today',    target:15,  type:'perfects', reward:40 },
+  { id:'dp9',  ico:'🚀', name:'Score Rush',     desc:'Score 100 points today',   target:100, type:'score',    reward:50 },
+  { id:'dp10', ico:'👻', name:'Ghost Slayer',   desc:'Beat your ghost today',    target:1,   type:'ghost',    reward:30 },
+  { id:'dp11', ico:'🏆', name:'Champion Run',   desc:'Score 30 points today',    target:30,  type:'score',    reward:20 },
+  { id:'dp12', ico:'🌊', name:'Endurance',      desc:'Play 7 games today',       target:7,   type:'games',    reward:45 },
+];
+
+const DailyMissions = {
+  getToday() { return new Date().toDateString(); },
+
+  getMissions() {
+    const today = this.getToday();
+    const savedDate = localStorage.getItem('dm_date');
+    if (savedDate !== today) {
+      // New day: pick 3 missions using deterministic date-based seed
+      const seed = today.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+      const indices = [];
+      let s = seed;
+      while (indices.length < 3) {
+        s = (s * 1103515245 + 12345) & 0x7fffffff;
+        const idx = s % DAILY_POOL.length;
+        if (!indices.includes(idx)) indices.push(idx);
+      }
+      const ids = indices.map(i => DAILY_POOL[i].id);
+      localStorage.setItem('dm_date', today);
+      localStorage.setItem('dm_ids', JSON.stringify(ids));
+      // Reset daily progress
+      DAILY_POOL.forEach(m => localStorage.removeItem('dm_prog_' + m.id));
+      return ids.map(id => DAILY_POOL.find(m => m.id === id));
+    }
+    const ids = JSON.parse(localStorage.getItem('dm_ids') || '[]');
+    return ids.map(id => DAILY_POOL.find(m => m.id === id)).filter(Boolean);
+  },
+
+  getProg(id) { return parseInt(localStorage.getItem('dm_prog_' + id) || '0'); },
+
+  update(type, val) {
+    const missions = this.getMissions();
+    let changed = false;
+    missions.forEach(m => {
+      if (m.type === type) {
+        const c = this.getProg(m.id);
+        if (c < m.target) {
+          const nv = Math.min(m.target, c + val);
+          localStorage.setItem('dm_prog_' + m.id, nv);
+          if (nv >= m.target && m.reward > 0) {
+            Coins.add(m.reward);
+            screenFlash('rgba(255,222,3,0.12)');
+          }
+          changed = true;
+        }
+      }
+    });
+    if (changed) buildMissions();
+  },
+};
+
+function startDmTimer() {
+  function tick() {
+    const el = document.getElementById('dm-timer');
+    if (!el) return;
+    const now = new Date(), mid = new Date(now);
+    mid.setHours(24, 0, 0, 0);
+    const d = mid - now;
+    const h = Math.floor(d / 3600000), m = Math.floor((d % 3600000) / 60000);
+    el.textContent = '🔄 ' + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+  }
+  tick(); setInterval(tick, 60000);
+}
+
 function updateMission(type, val) {
   MISSIONS.forEach(m => {
     if (m.type === type) {
@@ -1409,6 +1497,7 @@ function updateMission(type, val) {
       }
     }
   });
+  DailyMissions.update(type, val);
   buildMissions();
 }
 
@@ -1416,6 +1505,45 @@ function buildMissions() {
   const list = document.getElementById('mc-list');
   if (!list) return;
   list.innerHTML = '';
+
+  // ── Daily Missions section ──
+  const dailyMs = DailyMissions.getMissions();
+  const allDailyDone = dailyMs.every(m => DailyMissions.getProg(m.id) >= m.target);
+
+  const dlbl = document.createElement('div');
+  dlbl.className = 'mc-section-lbl gold';
+  dlbl.textContent = '📅 DAILY — RESETS AT MIDNIGHT';
+  list.appendChild(dlbl);
+
+  if (allDailyDone) {
+    const done = document.createElement('div');
+    done.className = 'dm-all-done';
+    done.textContent = '🌟 ALL DAILY MISSIONS COMPLETE!';
+    list.appendChild(done);
+  } else {
+    dailyMs.forEach(m => {
+      const prog = DailyMissions.getProg(m.id), done = prog >= m.target;
+      const pct = Math.min(100, Math.round(prog / m.target * 100));
+      const el = document.createElement('div');
+      el.className = 'mc-row daily' + (done ? ' done' : '');
+      el.innerHTML = `
+        <div class="mc-ico">${m.ico}</div>
+        <div class="mc-info">
+          <div class="mc-name">${m.name}</div>
+          <div class="mc-prog-txt">${m.desc} — ${prog}/${m.target}</div>
+          ${!done ? `<div class="mc-bar-bg"><div class="mc-bar-f" style="width:${pct}%"></div></div>` : ''}
+        </div>
+        ${done ? '<div class="mc-check">✅</div>' : `<div class="mc-pts">🪙${m.reward}</div>`}`;
+      list.appendChild(el);
+    });
+  }
+
+  // ── Permanent Missions section ──
+  const plbl = document.createElement('div');
+  plbl.className = 'mc-section-lbl';
+  plbl.textContent = '🏅 LIFETIME MISSIONS';
+  list.appendChild(plbl);
+
   MISSIONS.forEach(m => {
     const prog = getMProg(m), done = prog >= m.target;
     const pct = Math.min(100, Math.round(prog / m.target * 100));
@@ -3228,6 +3356,7 @@ AdMob.init(); AdMob.banner();
 document.getElementById('best-num').textContent = disp(GS.best);
 updateDailyUI(GS.best);
 startDailyTimer();
+startDmTimer();
 buildMissions();
 buildWorldGrid();
 buildShop();
