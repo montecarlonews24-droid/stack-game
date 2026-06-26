@@ -159,7 +159,7 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
 
 /* ── TABS ── */
 #tabs{position:relative;z-index:2;display:flex;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:4px;width:min(370px,94vw);}
-.tab{flex:1;padding:10px 3px;border-radius:13px;font-family:'Black Ops One',monospace;font-size:17px;color:rgba(255,255,255,.3);background:transparent;border:none;cursor:pointer;transition:all .2s;}
+.tab{flex:1;padding:10px 3px;border-radius:13px;font-family:'Black Ops One',monospace;font-size:17px;color:rgba(255,255,255,.85);background:transparent;border:none;cursor:pointer;transition:all .2s;}
 .tab.active{background:rgba(255,255,255,.08);color:#fff;filter:drop-shadow(0 0 6px rgba(255,255,255,0.3));}
 .tab-settings-btn{font-size:22px !important;filter:drop-shadow(0 0 6px rgba(255,255,255,0.55));color:rgba(255,255,255,0.85) !important;}
 .tab-pane{display:none;flex-direction:column;align-items:center;gap:10px;width:min(370px,94vw);position:relative;z-index:2;}
@@ -215,6 +215,26 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
 .mc-section-lbl.gold{color:rgba(255,222,3,.4);}
 .mc-row.daily{border-color:rgba(255,222,3,.12);}
 .mc-row.daily .mc-bar-f{background:linear-gradient(90deg,var(--c3),#ff8800);}
+
+/* ── DAILY LOGIN REWARD ── */
+#login-reward-card{width:100%;background:linear-gradient(135deg,rgba(255,222,3,.08),rgba(255,60,172,.05));border:1px solid rgba(255,222,3,.28);border-radius:18px;overflow:hidden;position:relative;margin-bottom:2px;}
+#login-reward-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--c3),var(--c2),transparent);}
+.lr-inner{padding:14px 16px;}
+.lr-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.lr-title{font-family:'Black Ops One',monospace;font-size:13px;letter-spacing:3px;color:var(--c3);}
+.lr-streak-badge{display:flex;align-items:center;gap:5px;background:rgba(255,60,172,.1);border:1px solid rgba(255,60,172,.2);border-radius:20px;padding:3px 10px;}
+.lr-streak-num{font-family:'Black Ops One',monospace;font-size:12px;color:var(--c2);}
+.lr-days{display:flex;gap:5px;justify-content:center;margin-bottom:12px;}
+.lr-day{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:7px 3px;}
+.lr-day.claimed{background:rgba(0,255,204,.07);border-color:rgba(0,255,204,.25);}
+.lr-day.today{background:rgba(255,222,3,.1);border-color:rgba(255,222,3,.4);box-shadow:0 0 10px rgba(255,222,3,.2);}
+.lr-day.today .lr-day-n{color:var(--c3);}
+.lr-day-ico{font-size:16px;}
+.lr-day-n{font-size:9px;letter-spacing:1px;color:rgba(255,255,255,.25);font-family:'Black Ops One',monospace;}
+.lr-day-coins{font-size:9px;color:rgba(255,222,3,.5);font-family:'Black Ops One',monospace;}
+#lr-btn{width:100%;background:linear-gradient(135deg,var(--c3),#ff8800);color:#000;font-family:'Black Ops One',monospace;font-size:14px;letter-spacing:3px;padding:13px;border-radius:12px;border:none;cursor:pointer;transition:transform .1s;box-shadow:0 0 18px rgba(255,222,3,.3);}
+#lr-btn:active{transform:scale(.96);}
+#lr-btn:disabled{background:rgba(255,255,255,.06);color:rgba(255,255,255,.2);box-shadow:none;cursor:default;}
 .mc-row.daily .mc-pts{color:var(--c3);}
 .mc-row.daily.done{border-color:rgba(255,222,3,.28);background:rgba(255,222,3,.03);}
 .dm-all-done{text-align:center;padding:9px 0 3px;font-family:'Black Ops One',monospace;font-size:13px;color:var(--c3);letter-spacing:3px;}
@@ -689,6 +709,17 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
 
   <!-- ═══ MISSIONS TAB ═══ -->
   <div class="tab-pane" id="tab-missions">
+    <!-- Daily Login Reward -->
+    <div id="login-reward-card">
+      <div class="lr-inner">
+        <div class="lr-header">
+          <div class="lr-title">&#x1F381; DAILY LOGIN REWARD</div>
+          <div class="lr-streak-badge"><span style="font-size:13px;">&#x1F525;</span><span class="lr-streak-num" id="lr-streak-num">0 DAY</span></div>
+        </div>
+        <div class="lr-days" id="lr-days"></div>
+        <button id="lr-btn" onclick="DailyLogin.claim()"><span id="lr-btn-txt">CLAIM REWARD</span></button>
+      </div>
+    </div>
     <div id="missions-card" style="width:100%;">
       <div class="mc-header"><span style="font-size:24px;">🎯</span><div class="mc-title">MISSIONS</div><div id="dm-timer"></div></div>
       <div class="mc-list" id="mc-list"></div>
@@ -1404,7 +1435,7 @@ const MISSIONS = [
   { id:'m4', ico:'💎', name:'Streak King',    desc:'Get 5x Streak',      target:5,   type:'streak',   reward:25 },
   { id:'m5', ico:'🌌', name:'World Explorer', desc:'Unlock SPACE world',  target:15,  type:'best',     reward:30 },
   { id:'m6', ico:'🪙', name:'Coin Collector', desc:'Earn 50 coins',      target:50,  type:'coins',    reward:0  },
-  { id:'m7', ico:'👻', name:'Ghost Hunter',   desc:'Beat your ghost 3x', target:3,   type:'ghost',    reward:40 },
+  { id:'m7', ico:'⚡', name:'Combo Master',   desc:'Get 3x Streak 3 times', target:3, type:'combo_streak', reward:40 },
   { id:'m8', ico:'🌍', name:'Traveler',       desc:'Play 5 worlds',      target:5,   type:'worlds',   reward:50 },
 ];
 
@@ -1422,7 +1453,7 @@ const DAILY_POOL = [
   { id:'dp7',  ico:'🏃', name:'Dedicated',      desc:'Play 5 games today',       target:5,   type:'games',    reward:35 },
   { id:'dp8',  ico:'🌟', name:'Star Player',    desc:'Get 15 Perfects today',    target:15,  type:'perfects', reward:40 },
   { id:'dp9',  ico:'🚀', name:'Score Rush',     desc:'Score 100 points today',   target:100, type:'score',    reward:50 },
-  { id:'dp10', ico:'👻', name:'Ghost Slayer',   desc:'Beat your ghost today',    target:1,   type:'ghost',    reward:30 },
+  { id:'dp10', ico:'⚡', name:'Combo Rush',    desc:'Get 3x Streak 2 times today', target:2,   type:'combo_streak', reward:30 },
   { id:'dp11', ico:'🏆', name:'Champion Run',   desc:'Score 30 points today',    target:30,  type:'score',    reward:20 },
   { id:'dp12', ico:'🌊', name:'Endurance',      desc:'Play 7 games today',       target:7,   type:'games',    reward:45 },
 ];
@@ -2504,6 +2535,7 @@ function _triggerCleanScreen() {
   // تحديث y لكل البلاطات المتبقية بعد الحذف
   blocks.forEach((b, i) => { b.y = gY() - i * BLOCK_H; });
   GS.streak = 0;
+  updateMission('combo_streak', 1);
 
   // Big bright flash for the 3/3 clear moment
   screenFlash('rgba(255,222,3,0.22)');
@@ -3385,12 +3417,117 @@ const PushNotif = {
   },
 };
 
+
+// ═══ DAILY LOGIN REWARD ═══
+const DailyLogin = {
+  // مكافآت 7 أيام: [coins, icon]
+  REWARDS: [
+    { coins: 10,  ico: '🪙' },
+    { coins: 15,  ico: '🪙' },
+    { coins: 20,  ico: '💰' },
+    { coins: 25,  ico: '💰' },
+    { coins: 30,  ico: '💎' },
+    { coins: 40,  ico: '💎' },
+    { coins: 50,  ico: '🔥' },
+  ],
+
+  getStreak()  { return parseInt(localStorage.getItem('lr_streak') || '0'); },
+  getLastDate(){ return localStorage.getItem('lr_last_date') || ''; },
+  isClaimed()  { return localStorage.getItem('lr_claimed_today') === new Date().toDateString(); },
+
+  // الموضع الحالي في الأسبوع (0-6)
+  getDayPos() {
+    const streak = this.getStreak();
+    return Math.min(streak % 7, 6);
+  },
+
+  build() {
+    const daysEl = document.getElementById('lr-days');
+    const streakEl = document.getElementById('lr-streak-num');
+    const btn = document.getElementById('lr-btn');
+    const btnTxt = document.getElementById('lr-btn-txt');
+    if (!daysEl) return;
+
+    const streak = this.getStreak();
+    const claimed = this.isClaimed();
+    const dayPos = this.getDayPos(); // اليوم الحالي في الأسبوع (0-6)
+
+    // streak badge
+    if (streakEl) streakEl.textContent = streak + (streak === 1 ? ' DAY' : ' DAYS');
+
+    // بناء 7 أيام
+    daysEl.innerHTML = '';
+    this.REWARDS.forEach((r, i) => {
+      const isPast   = i < dayPos;
+      const isToday  = i === dayPos;
+      const div = document.createElement('div');
+      div.className = 'lr-day' + (isPast || (isToday && claimed) ? ' claimed' : '') + (isToday && !claimed ? ' today' : '');
+      div.innerHTML = `<div class="lr-day-ico">${(isPast || (isToday && claimed)) ? '✅' : r.ico}</div>
+        <div class="lr-day-n">DAY ${i+1}</div>
+        <div class="lr-day-coins">+${r.coins}</div>`;
+      daysEl.appendChild(div);
+    });
+
+    // زر
+    if (claimed) {
+      btn.disabled = true;
+      btnTxt.textContent = '✅ CLAIMED TODAY';
+    } else {
+      btn.disabled = false;
+      const reward = this.REWARDS[dayPos];
+      btnTxt.textContent = `CLAIM +${reward.coins} 🪙`;
+    }
+  },
+
+  claim() {
+    if (this.isClaimed()) return;
+    const today = new Date().toDateString();
+    const lastDate = this.getLastDate();
+    let streak = this.getStreak();
+
+    // إذا أمس كان آخر يوم → streak يستمر، غير كذلك يبدأ من صفر
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const wasYesterday = lastDate === yesterday.toDateString();
+    if (!wasYesterday && lastDate !== today) streak = 0;
+
+    streak++;
+    localStorage.setItem('lr_streak', streak);
+    localStorage.setItem('lr_last_date', today);
+    localStorage.setItem('lr_claimed_today', today);
+
+    const dayPos = Math.min((streak - 1) % 7, 6);
+    const reward = this.REWARDS[dayPos];
+    Coins.add(reward.coins);
+    screenFlash('rgba(255,222,3,0.18)');
+
+    this.build();
+  },
+
+  // تحقق إذا انقطع الـ streak (لم يلعب أمس)
+  checkStreak() {
+    const lastDate = this.getLastDate();
+    if (!lastDate) return;
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const twoDaysAgo = new Date();
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    // إذا آخر دخول كان قبل أمس → reset streak
+    const last = new Date(lastDate);
+    if (last < twoDaysAgo) {
+      localStorage.setItem('lr_streak', '0');
+    }
+  },
+};
+
 // ═══ BOOT ═══
 AdMob.init(); AdMob.banner();
 document.getElementById('best-num').textContent = disp(GS.best);
 updateDailyUI(GS.best);
 startDailyTimer();
 startDmTimer();
+DailyLogin.checkStreak();
+DailyLogin.build();
 buildMissions();
 buildWorldGrid();
 buildShop();
