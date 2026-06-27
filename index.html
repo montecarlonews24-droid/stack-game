@@ -2444,8 +2444,8 @@ function tap() {
   if (_pos === 0 && !GS.fever) startFever(); // fever بعد 3 دورات متتالية
   updHUD();
 
-  // البلاطة الثالثة في الدورة → انفجار
-  if (_pos === 0) {
+  // البلاطة الثالثة في الدورة → انفجار (فقط إذا في 4 بلاطات على الأقل)
+  if (_pos === 0 && blocks.length >= 3) {
     _triggerCleanScreen();
   }
 
