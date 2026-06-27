@@ -134,7 +134,7 @@ canvas#gc{display:block;position:fixed;inset:0;}
 #pu-popup-txt{font-family:'Black Ops One',monospace;font-size:14px;letter-spacing:2px;margin-top:2px;}
 
 /* ── TAP HINT ── */
-#tap-hint{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;z-index:20;animation:hBob 2s ease-in-out infinite;}
+#tap-hint{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;z-index:20;animation:hBob 2s ease-in-out infinite;}
 @keyframes hBob{0%,100%{transform:translateX(-50%) translateY(0);}50%{transform:translateX(-50%) translateY(-8px);}}
 .hint-ring{width:54px;height:54px;border-radius:50%;border:2px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;animation:hPulse 2s ease infinite;}
 @keyframes hPulse{0%,100%{border-color:rgba(255,255,255,.08);}50%{border-color:rgba(0,255,204,.5);box-shadow:var(--s1);}}
@@ -2325,7 +2325,7 @@ function cw()  { return getWorld(GS.worldId, GS.best); }
 const BLOCK_H = 48; // ارتفاع البلاطة (أكبر = أوضح + فراغ كافي)
 // bY(i): الموضع Y للبلاطة i في فضاء العالم
 // القاعدة (i=0) عند أسفل الشاشة، كل بلاطة تعلو BLOCK_H فوق السابقة
-function gY()  { return C.height - 20; }
+function gY()  { return C.height + BLOCK_H - 10; }
 function bY(i) { return gY() - i * BLOCK_H; }
 
 // ── INIT GAME ─────────────────────────────
@@ -2398,7 +2398,7 @@ function tap() {
     gameOver(); return;
   }
 
-  const perf = Math.abs(slider.x - top.x) < 9;
+  const perf = Math.abs(slider.x - top.x) < 18;
   if (!perf) spawnCuts(slider.x < top.x ? slider.x : top.x + top.w, slider.x < top.x ? top.x - slider.x : slider.x + slider.w - (top.x + top.w), slider.y, slider.color);
 
   const newX = perf ? top.x : oL, newW = perf ? top.w : ovlap;
