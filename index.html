@@ -2398,7 +2398,9 @@ function tap() {
     gameOver(); return;
   }
 
-  const perf = Math.abs(slider.x - top.x) < 12;
+  // Tolerance decreases with score: easy start, gets harder
+  const _tol = GS.score < 300 ? 14 : GS.score < 600 ? 10 : GS.score < 900 ? 7 : 5;
+  const perf = Math.abs(slider.x - top.x) < _tol;
   if (!perf) spawnCuts(slider.x < top.x ? slider.x : top.x + top.w, slider.x < top.x ? top.x - slider.x : slider.x + slider.w - (top.x + top.w), slider.y, slider.color);
 
   const newX = perf ? top.x : oL, newW = perf ? top.w : ovlap;
