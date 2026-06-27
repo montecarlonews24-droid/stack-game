@@ -2325,7 +2325,7 @@ function cw()  { return getWorld(GS.worldId, GS.best); }
 const BLOCK_H = 48; // ارتفاع البلاطة (أكبر = أوضح + فراغ كافي)
 // bY(i): الموضع Y للبلاطة i في فضاء العالم
 // القاعدة (i=0) عند أسفل الشاشة، كل بلاطة تعلو BLOCK_H فوق السابقة
-function gY()  { return C.height + BLOCK_H - 10; }
+function gY()  { return C.height - 110; }
 function bY(i) { return gY() - i * BLOCK_H; }
 
 // ── INIT GAME ─────────────────────────────
@@ -2433,8 +2433,8 @@ function tap() {
     screenFlash('rgba(255,255,255,0.05)');
   }
 
-  // كل بلاطة ناجحة تزيد streak
-  GS.streak++;
+  // فقط الـ perfect تزيد streak
+  if (perf) GS.streak++;
   if (GS.streak > GS.bestStreak) GS.bestStreak = GS.streak;
 
   // الموضع في الدورة: 1→أول, 2→ثاني, 0→ثالث+BOOM
