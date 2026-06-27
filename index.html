@@ -2398,7 +2398,7 @@ function tap() {
     gameOver(); return;
   }
 
-  const perf = Math.abs(slider.x - top.x) < 18;
+  const perf = Math.abs(slider.x - top.x) < 12;
   if (!perf) spawnCuts(slider.x < top.x ? slider.x : top.x + top.w, slider.x < top.x ? top.x - slider.x : slider.x + slider.w - (top.x + top.w), slider.y, slider.color);
 
   const newX = perf ? top.x : oL, newW = perf ? top.w : ovlap;
@@ -2807,7 +2807,7 @@ function draw() {
   if (state === 'play' || state === 'dead') {
     // موضع قمة البرج على الشاشة = bY(blocks.length-1) + camY - BLOCK_H
     // نريده عند: C.height * 0.62
-    const desired = C.height * 0.62;
+    const desired = C.height * 0.82;
     const topWorldY = bY(blocks.length - 1) - BLOCK_H;
     camY = desired - topWorldY;
   }
