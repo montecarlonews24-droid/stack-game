@@ -2325,7 +2325,7 @@ function cw()  { return getWorld(GS.worldId, GS.best); }
 const BLOCK_H = 48; // ارتفاع البلاطة (أكبر = أوضح + فراغ كافي)
 // bY(i): الموضع Y للبلاطة i في فضاء العالم
 // القاعدة (i=0) عند أسفل الشاشة، كل بلاطة تعلو BLOCK_H فوق السابقة
-function gY()  { return C.height - 100; }
+function gY()  { return C.height - 20; }
 function bY(i) { return gY() - i * BLOCK_H; }
 
 // ── INIT GAME ─────────────────────────────
