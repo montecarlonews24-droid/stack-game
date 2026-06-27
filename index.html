@@ -2445,7 +2445,7 @@ function tap() {
   updHUD();
 
   // البلاطة الثالثة في الدورة → انفجار (فقط إذا في 4 بلاطات على الأقل)
-  if (_pos === 0 && blocks.length >= 4) {
+  if (_pos === 0 && blocks.length >= 5) {
     _triggerCleanScreen();
   }
 
@@ -2516,8 +2516,8 @@ function _triggerCleanScreen() {
   // player with a satisfying cascade and keeps the tower from piling up
   // indefinitely; the falling-speed curve (capped separately) still keeps
   // demanding more precision as the run goes on, regardless of tower height.
-  let removeCount = Math.min(3, Math.max(0, blocks.length - 2));
-  if (removeCount === 0) { GS.streak = 0; return; }
+  const removeCount = 3;
+  if (blocks.length < 5) { GS.streak = 0; return; } // need base + 3 real blocks
 
   const sparkle = ['#ffde03', '#00ffcc', '#ffffff', '#ff3cac', '#a259ff', '#3d9fff'];
 
