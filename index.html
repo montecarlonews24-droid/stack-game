@@ -62,10 +62,7 @@ canvas#gc{display:block;position:fixed;inset:0;}
 #mistake-lives{display:flex;justify-content:center;gap:6px;margin-top:12px;font-size:20px;}
 #mistake-lives .life.lost{opacity:.25;}
 #mistake-btns{display:flex;flex-direction:column;gap:10px;margin-top:18px;}
-#m-adbar{display:none;margin-top:4px;}
-#m-adbar-t{height:4px;background:rgba(255,60,172,.1);border-radius:2px;overflow:hidden;}
-#m-adbar-f{height:100%;width:0%;background:linear-gradient(90deg,var(--c2),var(--c4));border-radius:2px;transition:width .1s linear;}
-#m-adbar-l{font-size:11px;letter-spacing:2px;color:rgba(255,60,172,.35);text-align:center;margin-top:4px;}
+
 
 /* 🌍 World — أعلى يسار */
 #world-hud{position:fixed;top:14px;left:12px;z-index:22;pointer-events:none;max-width:calc(36vw - 12px);}
@@ -140,12 +137,6 @@ canvas#gc{display:block;position:fixed;inset:0;}
 @keyframes hPulse{0%,100%{border-color:rgba(255,255,255,.08);}50%{border-color:rgba(0,255,204,.5);box-shadow:var(--s1);}}
 .hint-txt{font-size:13px;letter-spacing:5px;color:rgba(255,255,255,.25);}
 
-/* ── BANNER ── */
-#banner{position:fixed;bottom:0;left:0;right:0;height:52px;z-index:21;background:rgba(9,9,15,.98);border-top:1px solid rgba(255,255,255,.03);display:flex;align-items:center;justify-content:center;gap:12px;}
-.bdot{width:4px;height:4px;border-radius:50%;background:rgba(0,255,204,.12);animation:bda 2.5s ease infinite;}
-@keyframes bda{0%,100%{opacity:.12;}50%{opacity:.45;}}
-.bdot:nth-child(3){animation-delay:.8s;}
-#btxt{font-size:10px;letter-spacing:3px;color:rgba(0,255,204,.12);}
 
 /* ── OVERLAY ── */
 #ov{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:max(36px,5vh);overflow-y:auto;overflow-x:hidden;gap:10px;transition:opacity .45s,transform .45s;padding-bottom:64px;}
@@ -379,17 +370,6 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
 #btn-spin-paid:active{transform:scale(.95);}
 #btn-spin-close{background:transparent;color:rgba(255,255,255,.2);font-family:'Black Ops One',monospace;font-size:11px;letter-spacing:2px;padding:10px;border-radius:14px;border:none;cursor:pointer;margin-top:2px;}
 
-/* ── INTERSTITIAL ── */
-#inter{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.97);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;}
-#inter.on{opacity:1;pointer-events:all;}
-#ib{width:min(300px,88vw);background:linear-gradient(145deg,#0d0d18,#0a1020);border:1px solid rgba(0,255,204,.12);border-radius:24px;padding:28px 20px;text-align:center;position:relative;overflow:hidden;}
-#ib::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--c1),var(--c2),transparent);}
-.ib-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(0,255,204,.05);border:1px solid rgba(0,255,204,.1);border-radius:20px;padding:4px 12px;margin-bottom:14px;font-size:10px;letter-spacing:4px;color:rgba(0,255,204,.4);}
-.ib-ico{font-size:48px;margin-bottom:10px;display:block;}
-.ib-t{font-family:'Black Ops One',monospace;font-size:16px;color:#fff;margin-bottom:5px;}
-.ib-s{font-size:13px;color:rgba(255,255,255,.22);line-height:1.6;margin-bottom:16px;}
-.ib-cd{font-family:'Black Ops One',monospace;font-size:13px;color:rgba(0,255,204,.3);letter-spacing:2px;margin-bottom:14px;}
-#icta{display:none;background:transparent;border:1px solid rgba(0,255,204,.15);border-radius:10px;padding:11px 28px;font-family:'Black Ops One',monospace;font-size:11px;letter-spacing:3px;color:rgba(0,255,204,.5);cursor:pointer;}
 
 /* ── SPLASH SCREEN ── */
 #splash{position:fixed;inset:0;z-index:9999;background:#09090f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;transition:opacity .6s,transform .6s;}
@@ -599,8 +579,6 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
   <div class="hint-txt">TAP TO STACK</div>
 </div>
 
-<!-- ═══ BANNER ═══ -->
-<div id="banner"><div class="bdot"></div><div id="btxt">ADMOB BANNER · ca-app-pub-7391340097032763/7231819452</div><div class="bdot"></div></div>
 
 <!-- ═══════════════════════════════════════
      OVERLAY MENU
@@ -850,17 +828,6 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
   </div>
 </div>
 
-<!-- ═══ INTERSTITIAL AD ═══ -->
-<div id="inter">
-  <div id="ib">
-    <div class="ib-chip">ADVERTISEMENT</div>
-    <span class="ib-ico">📱</span>
-    <div class="ib-t">Your Ad Here</div>
-    <div class="ib-s">ca-app-pub-7391340097032763<br/>Replace with Interstitial Unit ID</div>
-    <div class="ib-cd">Closing in <span id="isec">5</span>s</div>
-    <button id="icta">✕  CLOSE</button>
-  </div>
-</div>
 
 <!-- ═══════════════════════════════════════
      SCRIPTS — order matters!
@@ -1893,32 +1860,41 @@ function doSpin(watchAdForRefill) {
   if (_spinRunning) return;
 
   if (watchAdForRefill) {
-    // Watch ad to get +1 spin
+    // Fake ad delay then +1 spin
     if (LuckySpin.getSpins() >= LuckySpin.MAX_SPINS) return;
     const paidBtn = document.getElementById('btn-spin-paid');
     if (paidBtn) { paidBtn.disabled = true; paidBtn.textContent = '⏳ Loading…'; }
-    _mockSpinAd(() => {
-      LuckySpin.setSpins(LuckySpin.getSpins() + 1);
-      updateSpinButtons();
-      updateSpinTimer();
-      const timerEl = document.getElementById('spin-timer');
-      if (timerEl) timerEl.textContent = '✅ +1 Spin added!';
-    });
+    const timerEl = document.getElementById('spin-timer');
+    if (timerEl) timerEl.textContent = '🎰 Spinning up… 5s';
+    let t = 5;
+    const iv = setInterval(() => {
+      t--;
+      if (timerEl) timerEl.textContent = t > 0 ? `🎰 Spinning up… ${t}s` : '✅ Done!';
+      if (t <= 0) { clearInterval(iv); setTimeout(() => {
+        LuckySpin.setSpins(LuckySpin.getSpins() + 1);
+        updateSpinButtons(); updateSpinTimer();
+        if (timerEl) timerEl.textContent = '✅ +1 Spin added!';
+      }, 300); }
+    }, 1000);
     return;
   }
 
-  // Normal spin — uses 1 charge, shows ad first
+  // Normal spin — fake ad delay then spin
   if (!LuckySpin.canSpin()) return;
-
   const freeBtn = document.getElementById('btn-spin-free');
   if (freeBtn) { freeBtn.disabled = true; freeBtn.textContent = '⏳ Loading…'; }
+  const timerElS = document.getElementById('spin-timer');
+  if (timerElS) timerElS.textContent = '🎰 Spinning up… 5s';
+  let t2 = 5;
+  const iv2 = setInterval(() => {
+    t2--;
+    if (timerElS) timerElS.textContent = t2 > 0 ? `🎰 Spinning up… ${t2}s` : '✅ Done!';
+    if (t2 <= 0) { clearInterval(iv2); setTimeout(() => { updateSpinTimer(); _runSpin(); }, 300); }
+  }, 1000);
+}
 
-  _mockSpinAd(() => {
-    // Ad watched — deduct spin & spin
-    if (!LuckySpin.useOneSpin()) {
-      updateSpinButtons();
-      return;
-    }
+function _runSpin() {
+    if (!LuckySpin.useOneSpin()) { updateSpinButtons(); return; }
     updateSpinButtons();
     _spinRunning = true;
 
@@ -1963,22 +1939,8 @@ function doSpin(watchAdForRefill) {
       }
     }
     requestAnimationFrame(animate);
-  });
 }
 
-// Ad simulation for spin (independent from reward card adbar)
-function _mockSpinAd(cb) {
-  const freeBtn = document.getElementById('btn-spin-free');
-  const paidBtn = document.getElementById('btn-spin-paid');
-  const timerEl = document.getElementById('spin-timer');
-  if (timerEl) timerEl.textContent = '🎰 Spinning up… 5s';
-  let t = 5;
-  const iv = setInterval(() => {
-    t--;
-    if (timerEl) timerEl.textContent = t > 0 ? `🎰 Spinning up… ${t}s` : '✅ Done!';
-    if (t <= 0) { clearInterval(iv); setTimeout(() => { cb && cb(); updateSpinTimer(); }, 300); }
-  }, 1000);
-}
 (function(){
   const s = document.createElement('style');
   s.textContent = '@keyframes spinFloat{0%,100%{transform:translateY(0) rotate(-5deg);}50%{transform:translateY(-6px) rotate(5deg);}}' +
@@ -1990,7 +1952,7 @@ function _mockSpinAd(cb) {
 // ═══ GAME ═══
 /* ═══════════════════════════════════════════
    STACK! Tower Rush — Core Game Engine
-   Power-ups · Sound · AdMob
+   Power-ups · Sound
    ═══════════════════════════════════════════ */
 
 // ── SETTINGS ──────────────────────────────
@@ -2031,68 +1993,6 @@ function sendContact() {
     document.getElementById('contact-email').value = '';
     document.getElementById('contact-msg').value = '';
   }, 1500);
-}
-
-// ── ADMOB ─────────────────────────────────
-// Median.co's native AdMob bridge only supports Banner + Interstitial — there is
-// no "Rewarded" ad format in their JS Bridge. So the two "Watch Ad" buttons can't
-// show a true rewarded ad; instead, when running inside the real app, we fire a
-// real Interstitial impression at that same moment (the player already expects
-// an ad there) while keeping the existing free reward + progress-bar UX exactly
-// as before. Outside the app (plain browser testing) everything falls back to
-// the fake mock, so nothing breaks during preview.
-const IS_MEDIAN_APP = navigator.userAgent.indexOf('median') > -1;
-function _realInterstitial() {
-  if (IS_MEDIAN_APP && window.median && median.admob) {
-    try { median.admob.showInterstitialIfReady(); } catch (e) {}
-  }
-}
-const AdMob = {
-  APP:    'ca-app-pub-7391340097032763~6110309479',
-  BANNER: 'ca-app-pub-7391340097032763/7231819452',
-  INTER:  'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
-  _g: 0,
-  init() {
-    console.log('[AdMob]', this.APP);
-    if (IS_MEDIAN_APP) {
-      // Real native banner is rendered by Median itself below the webview —
-      // hide our fake placeholder bar so they don't show stacked on top of each other.
-      const fb = document.getElementById('banner');
-      if (fb) fb.style.display = 'none';
-      if (window.median && median.admob && median.admob.banner) {
-        try { median.admob.banner.enable(); } catch (e) {}
-      }
-    }
-  },
-  banner() {},
-  interstitial(cb) {
-    this._g++;
-    if (this._g % 3 !== 0) { cb && cb(); return; }
-    if (IS_MEDIAN_APP) { _realInterstitial(); cb && cb(); }
-    else _mockInter(cb);
-  },
-  // No real "rewarded" format exists on Median — fire a real Interstitial
-  // alongside the existing free-reward flow instead of a fake-only experience.
-  rewarded(cb) { _realInterstitial(); _mockReward(cb); }
-};
-function _mockInter(cb) {
-  const ov = document.getElementById('inter'), s = document.getElementById('isec'), btn = document.getElementById('icta');
-  let t = 5; s.textContent = t; btn.style.display = 'none'; ov.classList.add('on');
-  const iv = setInterval(() => { t--; s.textContent = t; if (t <= 0) { clearInterval(iv); btn.style.display = 'inline-block'; } }, 1000);
-  btn.onclick = () => { ov.classList.remove('on'); cb && cb(); };
-}
-function _mockReward(cb) {
-  const w = document.getElementById('adbar'), f = document.getElementById('adbar-f'), s = document.getElementById('adsec'), b = document.getElementById('btn-ad');
-  b.classList.add('gbtn-dis'); b.textContent = '⏳ LOADING…';
-  w.style.display = 'block'; let p = 0, sc = 5;
-  const iv = setInterval(() => { p += 2; f.style.width = Math.min(100, p) + '%'; sc = Math.max(0, Math.ceil(5 - p / 20)); s.textContent = sc; if (p >= 100) { clearInterval(iv); cb(); } }, 100);
-}
-function _mockRewardMistake(cb) {
-  _realInterstitial();
-  const w = document.getElementById('m-adbar'), f = document.getElementById('m-adbar-f'), s = document.getElementById('m-adsec'), b = document.getElementById('btn-mistake-ad');
-  b.classList.add('gbtn-dis'); b.textContent = '⏳ LOADING…';
-  w.style.display = 'block'; let p = 0, sc = 3;
-  const iv = setInterval(() => { p += 3.33; f.style.width = Math.min(100, p) + '%'; sc = Math.max(0, Math.ceil(3 - p / 33.3)); s.textContent = sc; if (p >= 100) { clearInterval(iv); cb(); } }, 100);
 }
 
 
@@ -2967,7 +2867,6 @@ function showGameOver() {
   buildMissions();
   saveGlobalScore(GS.score, cw().name, cw().emoji); // async - rebuilds lb internally
   Tournament.build(GS.score);
-  AdMob.interstitial(() => {});
 }
 
 // ── WORLD SELECT ──────────────────────────
@@ -3017,23 +2916,27 @@ document.getElementById('btn-skip').addEventListener('click', startNewGame);
 document.getElementById('btn-world-play').addEventListener('click', () => { GS.worldId = selectedWorldId; showTab('play'); startNewGame(); });
 document.getElementById('btn-ad').addEventListener('click', () => {
   if (GS.rewardUsed) return; GS.rewardUsed = true;
-  AdMob.rewarded(() => {
-    // Double score
-    GS.score *= 2;
-    if (GS.score > GS.best) { GS.best = GS.score; localStorage.setItem('stack_best', GS.best); }
-    document.getElementById('rc-score').textContent = disp(GS.score);
-    document.getElementById('rc-best').textContent = disp(GS.best);
-    document.getElementById('rn-a').textContent = disp(GS.score);
-    document.getElementById('sp-score').textContent = disp(GS.score);
-    const ba = document.getElementById('btn-ad');
-    ba.classList.remove('gbtn-dis'); ba.classList.add('gbtn-done'); ba.textContent = '✅ SCORE DOUBLED!';
-    document.getElementById('adbar').style.display = 'none';
-    saveGlobalScore(GS.score, cw().name, cw().emoji);
-    buildLeaderboard();
-    // Show CONTINUE button
-    document.getElementById('btn-continue').style.display = 'flex';
-    document.getElementById('btn-one-more').style.display = 'none';
-  });
+  // Show fake ad progress bar then reward
+  const w = document.getElementById('adbar'), f = document.getElementById('adbar-f'), s = document.getElementById('adsec'), b = document.getElementById('btn-ad');
+  b.classList.add('gbtn-dis'); b.textContent = '⏳ LOADING…';
+  w.style.display = 'block'; let p = 0, sc = 5;
+  const iv = setInterval(() => { p += 2; f.style.width = Math.min(100, p) + '%'; sc = Math.max(0, Math.ceil(5 - p / 20)); s.textContent = sc;
+    if (p >= 100) { clearInterval(iv);
+      // Double score
+      GS.score *= 2;
+      if (GS.score > GS.best) { GS.best = GS.score; localStorage.setItem('stack_best', GS.best); }
+      document.getElementById('rc-score').textContent = disp(GS.score);
+      document.getElementById('rc-best').textContent = disp(GS.best);
+      document.getElementById('rn-a').textContent = disp(GS.score);
+      document.getElementById('sp-score').textContent = disp(GS.score);
+      b.classList.remove('gbtn-dis'); b.classList.add('gbtn-done'); b.textContent = '✅ SCORE DOUBLED!';
+      document.getElementById('adbar').style.display = 'none';
+      saveGlobalScore(GS.score, cw().name, cw().emoji);
+      buildLeaderboard();
+      document.getElementById('btn-continue').style.display = 'flex';
+      document.getElementById('btn-one-more').style.display = 'none';
+    }
+  }, 100);
 });
 
 // CONTINUE — resume from where player stopped
@@ -3048,31 +2951,33 @@ document.getElementById('btn-continue').addEventListener('click', () => {
   initGame(false);
 });
 
-// MISTAKE SAVE — watch ad to keep playing after a complete miss
+// MISTAKE SAVE — watch fake ad to keep playing after a complete miss
 document.getElementById('btn-mistake-ad').addEventListener('click', () => {
   const btn = document.getElementById('btn-mistake-ad');
   if (btn.classList.contains('gbtn-dis')) return;
-  _mockRewardMistake(() => {
-    GS.mistakesLeft--;
-    updHUD();
-    document.getElementById('mistake-ov').classList.remove('on');
-    SFX.powerup(); Haptic.powerup();
-    dropping = false;
-
-    // ── RESCUE WIDEN: if the current top block is too small to realistically
-    // continue on, widen it to a playable size (centered on its old position) ──
-    const top = blocks[blocks.length - 1];
-    const RESCUE_W = Math.min(C.width * .4, 160);
-    if (top.w < RESCUE_W) {
-      const cx = top.x + top.w / 2;
-      let newW = RESCUE_W;
-      let newX = cx - newW / 2;
-      newX = Math.max(0, Math.min(newX, C.width - newW));
-      top.x = newX; top.w = newW;
+  // Inline fake ad progress bar
+  const w = document.getElementById('m-adbar'), f = document.getElementById('m-adbar-f'), s = document.getElementById('m-adsec');
+  btn.classList.add('gbtn-dis'); btn.textContent = '⏳ LOADING…';
+  w.style.display = 'block'; let p = 0, sc = 3;
+  const iv = setInterval(() => { p += 3.33; f.style.width = Math.min(100, p) + '%'; sc = Math.max(0, Math.ceil(3 - p / 33.3)); s.textContent = sc;
+    if (p >= 100) { clearInterval(iv);
+      GS.mistakesLeft--;
+      updHUD();
+      document.getElementById('mistake-ov').classList.remove('on');
+      SFX.powerup(); Haptic.powerup();
+      dropping = false;
+      // ── RESCUE WIDEN ──
+      const top = blocks[blocks.length - 1];
+      const RESCUE_W = Math.min(C.width * .4, 160);
+      if (top.w < RESCUE_W) {
+        const cx = top.x + top.w / 2;
+        let newW = RESCUE_W, newX = cx - newW / 2;
+        newX = Math.max(0, Math.min(newX, C.width - newW));
+        top.x = newX; top.w = newW;
+      }
+      setTimeout(() => newSlider(), 80);
     }
-
-    setTimeout(() => newSlider(), 80);
-  });
+  }, 100);
 });
 document.getElementById('btn-mistake-end').addEventListener('click', () => {
   document.getElementById('mistake-ov').classList.remove('on');
@@ -3518,7 +3423,6 @@ const DailyLogin = {
 };
 
 // ═══ BOOT ═══
-AdMob.init(); AdMob.banner();
 document.getElementById('best-num').textContent = disp(GS.best);
 updateDailyUI(GS.best);
 startDailyTimer();
