@@ -2518,13 +2518,6 @@ function _triggerCleanScreen() {
   // demanding more precision as the run goes on, regardless of tower height.
   let removeCount = Math.min(3, Math.max(0, blocks.length - 1));
   if (removeCount === 0) { GS.streak = 0; return; }
-  const matchWidth = blocks[blocks.length - 1].w;
-  while (
-    removeCount < blocks.length - 1 &&
-    Math.abs(blocks[blocks.length - removeCount - 1].w - matchWidth) < 0.5
-  ) {
-    removeCount++;
-  }
 
   const sparkle = ['#ffde03', '#00ffcc', '#ffffff', '#ff3cac', '#a259ff', '#3d9fff'];
 
