@@ -2445,7 +2445,7 @@ function tap() {
   updHUD();
 
   // البلاطة الثالثة في الدورة → انفجار (فقط إذا في 4 بلاطات على الأقل)
-  if (_pos === 0 && blocks.length >= 5) {
+  if (_pos === 0 && blocks.length >= 4) {
     _triggerCleanScreen();
   }
 
@@ -2517,7 +2517,7 @@ function _triggerCleanScreen() {
   // indefinitely; the falling-speed curve (capped separately) still keeps
   // demanding more precision as the run goes on, regardless of tower height.
   const removeCount = 3;
-  if (blocks.length < 5) { GS.streak = 0; return; } // need base + 3 real blocks
+  if (blocks.length < 4) { GS.streak = 0; return; } // need base + 3 real blocks
 
   const sparkle = ['#ffde03', '#00ffcc', '#ffffff', '#ff3cac', '#a259ff', '#3d9fff'];
 
