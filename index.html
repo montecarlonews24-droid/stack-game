@@ -2445,7 +2445,7 @@ function tap() {
   updHUD();
 
   // البلاطة الثالثة في الدورة → انفجار (فقط إذا في 4 بلاطات على الأقل)
-  if (_pos === 0 && blocks.length >= 4) {
+  if (_pos === 0 && GS.streak > 0 && blocks.length >= 4) {
     _triggerCleanScreen();
   }
 
