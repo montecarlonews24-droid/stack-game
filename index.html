@@ -2519,6 +2519,11 @@ function _triggerCleanScreen() {
   const removeCount = 3;
   if (blocks.length < 4) { GS.streak = 0; return; } // need base + 3 real blocks
 
+  // تحقق أن الـ 3 بلاطات لها نفس العرض تقريباً (فرق أقل من 2px)
+  const topW = blocks[blocks.length - 1].w;
+  const allSameWidth = [1, 2].every(i => Math.abs(blocks[blocks.length - 1 - i].w - topW) < 2);
+  if (!allSameWidth) { GS.streak = 0; return; }
+
   const sparkle = ['#ffde03', '#00ffcc', '#ffffff', '#ff3cac', '#a259ff', '#3d9fff'];
 
   // Capture the 3 blocks BEFORE removing them — used for explosion positions only
