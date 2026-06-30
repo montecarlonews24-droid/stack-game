@@ -2338,15 +2338,21 @@ function tap() {
   // فقط الـ perfect تزيد streak
   if (perf) GS.streak++;
   if (GS.streak > GS.bestStreak) GS.bestStreak = GS.streak;
-
-  // الموضع في الدورة: 1→أول, 2→ثاني, 0→ثالث+BOOM
-  const _pos = GS.streak % 3;
-  if (_pos === 0 && !GS.fever) startFever(); // fever بعد 3 دورات متتالية
   updHUD();
 
-  // البلاطة الثالثة في الدورة → انفجار (فقط إذا في 4 بلاطات على الأقل)
-  if (_pos === 0 && GS.streak > 0 && blocks.length >= 4) {
-    _triggerCleanScreen();
+  // ── 3+ متتالية بنفس العرض → تنفجر كلها دفعة وحدة ──
+  // نحسب من القمة للأسفل كم بلاطة متتالية لها نفس العرض بالضبط
+  let _sameWidthCount = 0;
+  if (perf && blocks.length >= 1) {
+    const topW = blocks[blocks.length - 1].w;
+    for (let i = blocks.length - 1; i >= 0; i--) {
+      if (Math.abs(blocks[i].w - topW) < 0.5) _sameWidthCount++;
+      else break;
+    }
+  }
+  if (perf && _sameWidthCount >= 3 && blocks.length >= _sameWidthCount + 1) {
+    if (!GS.fever) startFever();
+    _triggerCleanScreen(_sameWidthCount);
   }
 
   if (GS.score > GS.best) { GS.best = GS.score; localStorage.setItem('stack_best', GS.best); }
@@ -2407,17 +2413,13 @@ function showMistakeOverlay() {
   document.getElementById('mistake-ov').classList.add('on');
 }
 
-// ── CLEAN SCREEN (3x Streak: erase the last 3 perfect blocks) ──────────────────────────
-function _triggerCleanScreen() {
-  // Keep at least 1 block (the base). Start with the 3 perfect-streak blocks,
-  // then cascade downward through any additional blocks that share the exact
-  // same width ("same level") — a longer unbroken perfect run clears together
-  // in one big chain instead of capping at a flat 3. This rewards a skilled
-  // player with a satisfying cascade and keeps the tower from piling up
-  // indefinitely; the falling-speed curve (capped separately) still keeps
-  // demanding more precision as the run goes on, regardless of tower height.
-  const removeCount = 3;
-  if (blocks.length < 4) { GS.streak = 0; return; } // need base + 3 real blocks
+// ── CLEAN SCREEN (3+ Streak بنفس العرض: ينفجرو كلهم دفعة وحدة) ──────────────────────────
+function _triggerCleanScreen(removeCount) {
+  // removeCount = عدد البلاطات المتتالية بنفس العرض من القمة (3 أو أكثر).
+  // كل ما طوّل اللاعب السلسلة (4، 5، 6...) كل ما كانت دفعة الانفجار أكبر،
+  // وده يرجعه للقاعدة ويفسح مجال للعب أطول بدل ما البرج يصير طويل بلا داعي.
+  removeCount = removeCount || 3;
+  if (blocks.length < removeCount + 1) { GS.streak = 0; return; } // لازم تبقى القاعدة + البلاطات المُزالة
 
 
 
@@ -2786,16 +2788,14 @@ function updHUD() {
   document.getElementById('best-num').textContent = disp(GS.best);
   const sb = document.getElementById('set-best'); if (sb) sb.textContent = disp(GS.best);
   const sw = document.getElementById('streak');
-  // الموضع في الدورة: streak%3 → 1=أول, 2=ثاني, 0=ثالث
-  const _streakPos = GS.streak % 3; // 1, 2, أو 0(=3)
-  const _displayPos = _streakPos === 0 && GS.streak > 0 ? 3 : _streakPos;
+  // يعرض عدد البلاطات المتتالية الحالي (2 فأكثر)؛ عند الوصول لـ3+ سينفجر فوراً
+  const _displayPos = GS.streak;
   if (_displayPos >= 2) {
-    // نعرض فقط من البلاطة الثانية
     sw.classList.add('show');
     sw.classList.remove('lvl1','lvl2','lvl3');
-    sw.classList.add('lvl' + _displayPos);
+    sw.classList.add('lvl' + Math.min(_displayPos, 3));
     document.getElementById('streak-n').textContent = _displayPos + '/3';
-    for (let i = 0; i < 3; i++) document.getElementById('sp' + i).classList.toggle('on', i < _displayPos);
+    for (let i = 0; i < 3; i++) document.getElementById('sp' + i).classList.toggle('on', i < Math.min(_displayPos, 3));
   } else {
     sw.classList.remove('show','lvl1','lvl2','lvl3');
   }
