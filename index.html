@@ -2352,9 +2352,10 @@ function tap() {
     }
   }
   if (perf && _sameWidthCount >= 3) {
-    if (!GS.fever) startFever();
     _triggerCleanScreen(_sameWidthCount);
+    try { if (!GS.fever) startFever(); } catch (e) { console.warn('fever err', e); }
   }
+  console.log('[STREAK DEBUG] perf=' + perf + ' streak=' + GS.streak + ' blocks=' + blocks.length + ' sameWidth=' + _sameWidthCount + ' widths=[' + blocks.map(b=>b.w.toFixed(1)).join(',') + ']');
 
   if (GS.score > GS.best) { GS.best = GS.score; localStorage.setItem('stack_best', GS.best); }
   updateMission('score', pts);
