@@ -2340,22 +2340,18 @@ function tap() {
   if (GS.streak > GS.bestStreak) GS.bestStreak = GS.streak;
   updHUD();
 
-  // ── 3+ متتالية بنفس العرض → تنفجر كلها دفعة وحدة ──
-  // نحسب من القمة للأسفل كم بلاطة متتالية لها نفس العرض بالضبط.
-  // القاعدة (blocks[0]) لا تُحسب أبداً ولا تنفجر — هي أرضية فقط.
-  let _sameWidthCount = 0;
-  if (perf && blocks.length >= 2) {
-    const topW = blocks[blocks.length - 1].w;
-    for (let i = blocks.length - 1; i >= 1; i--) {
-      if (Math.abs(blocks[i].w - topW) < 0.5) _sameWidthCount++;
-      else break;
+  // ── 3 بلاطات perfect متتالية (نفس المستوى) → تنفجر كلها دفعة وحدة ──
+  // نعتمد على GS.streak مباشرة: يزيد فقط مع الـ perfect المتتالية ويُصفّر عند أي خطأ،
+  // فوصوله 3 يعني بالضبط 3 بلاطات متطابقة المستوى فوق ما تحتها.
+  if (perf && GS.streak >= 3) {
+    // عدد البلاطات المراد تفجيرها = طول السلسلة الحالية (3 أو أكثر)،
+    // لكن نُبقي دائماً بلاطة واحدة على الأقل كقاعدة.
+    const _removeN = Math.min(GS.streak, blocks.length - 1);
+    if (_removeN >= 1) {
+      _triggerCleanScreen(_removeN);
+      try { if (!GS.fever) startFever(); } catch (e) {}
     }
   }
-  if (perf && _sameWidthCount >= 3) {
-    _triggerCleanScreen(_sameWidthCount);
-    try { if (!GS.fever) startFever(); } catch (e) { console.warn('fever err', e); }
-  }
-  console.log('[STREAK DEBUG] perf=' + perf + ' streak=' + GS.streak + ' blocks=' + blocks.length + ' sameWidth=' + _sameWidthCount + ' widths=[' + blocks.map(b=>b.w.toFixed(1)).join(',') + ']');
 
   if (GS.score > GS.best) { GS.best = GS.score; localStorage.setItem('stack_best', GS.best); }
   updateMission('score', pts);
