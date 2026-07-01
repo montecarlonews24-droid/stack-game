@@ -2341,16 +2341,17 @@ function tap() {
   updHUD();
 
   // ── 3+ متتالية بنفس العرض → تنفجر كلها دفعة وحدة ──
-  // نحسب من القمة للأسفل كم بلاطة متتالية لها نفس العرض بالضبط
+  // نحسب من القمة للأسفل كم بلاطة متتالية لها نفس العرض بالضبط.
+  // القاعدة (blocks[0]) لا تُحسب أبداً ولا تنفجر — هي أرضية فقط.
   let _sameWidthCount = 0;
-  if (perf && blocks.length >= 1) {
+  if (perf && blocks.length >= 2) {
     const topW = blocks[blocks.length - 1].w;
-    for (let i = blocks.length - 1; i >= 0; i--) {
+    for (let i = blocks.length - 1; i >= 1; i--) {
       if (Math.abs(blocks[i].w - topW) < 0.5) _sameWidthCount++;
       else break;
     }
   }
-  if (perf && _sameWidthCount >= 3 && blocks.length >= _sameWidthCount + 1) {
+  if (perf && _sameWidthCount >= 3) {
     if (!GS.fever) startFever();
     _triggerCleanScreen(_sameWidthCount);
   }
@@ -2419,7 +2420,9 @@ function _triggerCleanScreen(removeCount) {
   // كل ما طوّل اللاعب السلسلة (4، 5، 6...) كل ما كانت دفعة الانفجار أكبر،
   // وده يرجعه للقاعدة ويفسح مجال للعب أطول بدل ما البرج يصير طويل بلا داعي.
   removeCount = removeCount || 3;
-  if (blocks.length < removeCount + 1) { GS.streak = 0; return; } // لازم تبقى القاعدة + البلاطات المُزالة
+  // نُبقي دائماً بلاطة واحدة على الأقل كقاعدة
+  removeCount = Math.min(removeCount, blocks.length - 1);
+  if (removeCount < 1) { GS.streak = 0; return; }
 
 
 
