@@ -2343,18 +2343,17 @@ function tap() {
   if (GS.streak > GS.bestStreak) GS.bestStreak = GS.streak;
   updHUD();
 
-  // ── قاعدة الانفجار الصارمة ──
-  // تنفجر فقط عند 3+ بلاطات حقيقية متتالية لها نفس العرض بالضبط (فرق < 0.5 بكسل).
+  // ── قاعدة الانفجار ──
+  // تنفجر أي 3+ بلاطات حقيقية متتالية لها نفس العرض بالضبط (فرق < 0.5 بكسل).
   // القاعدة blocks[0] لا تدخل الحساب إطلاقاً (i >= 1).
-  // نستخدم أيضاً GS.streak (يزيد فقط مع perfect متتالية ويُصفّر عند أي خطأ) كشرط ثانٍ:
-  // فلا تنفجر إلا إذا كانت آخر البلاطات perfect متتالية فعلاً، لا مصادفة عرض بعد أخطاء.
+  // لا نشترط streak — المهم فقط تطابق العرض، سواء perfect متتالية أو نتيجة لعب.
   let _matches = 0;
   const _topW = blocks[blocks.length - 1].w;
   for (let i = blocks.length - 1; i >= 1; i--) {
     if (Math.abs(blocks[i].w - _topW) < 0.5) _matches++;
     else break;
   }
-  if (_matches >= 3 && GS.streak >= 3) {
+  if (_matches >= 3) {
     _triggerCleanScreen(_matches);
     try { if (!GS.fever) startFever(); } catch (e) {}
   }
