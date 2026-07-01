@@ -2303,20 +2303,10 @@ function tap() {
   const perf = Math.abs(slider.x - top.x) < _tol;
   if (!perf) spawnCuts(slider.x < top.x ? slider.x : top.x + top.w, slider.x < top.x ? top.x - slider.x : slider.x + slider.w - (top.x + top.w), slider.y, slider.color);
 
-  // ── تحديد عرض/موضع البلاطة الجديدة ──
-  // perfect      → نفس عرض وموضع البلاطة تحتها بالضبط.
-  // شبه-perfect  → إذا كان التداخل كبيراً (≥ 65% من عرض البلاطة تحتها)، نُبقي البلاطة
-  //                بكامل عرض البلاطة تحتها (لا نقصّها) — هذا يسمح للاعب بتصويب أخطائه
-  //                والوصول إلى 3 بلاطات بنفس العرض لتفجيرها، بدل أن يضيق البرج بلا رجعة.
-  // خطأ كبير     → نقصّ إلى الجزء المتداخل فقط (كما اللعبة الأصلية).
-  let newX, newW;
-  if (perf) {
-    newX = top.x; newW = top.w;
-  } else if (ovlap >= top.w * 0.65) {
-    newX = top.x; newW = top.w;
-  } else {
-    newX = oL; newW = ovlap;
-  }
+  // perfect → نفس عرض وموضع البلاطة تحتها بالضبط.
+  // غير perfect → تُقصّ إلى الجزء المتداخل فقط (كاللعبة الأصلية).
+  // اللاعب هو من يصوّب أخطاءه: يحتاج وضعاً دقيقاً (perfect) لبناء بلاطات بنفس العرض.
+  const newX = perf ? top.x : oL, newW = perf ? top.w : ovlap;
   blocks.push({ x: newX, y: slider.y, w: newW, color: slider.color });
 
   let pts = 1;
@@ -2353,24 +2343,22 @@ function tap() {
   if (GS.streak > GS.bestStreak) GS.bestStreak = GS.streak;
   updHUD();
 
-  // ── قاعدة الانفجار: أي 3+ بلاطات فوق بعض بنفس العرض بالضبط تنفجر ──
-  // نحسب من القمة للأسفل عدد البلاطات المتتالية بنفس عرض القمة.
-  // القاعدة (blocks[0]) مستثناة دائماً (لا تُحسب ولا تنفجر).
-  // هذا يشمل حالتين: (أ) perfect متتالية، (ب) بلاطات تصادف نفس العرض بعد أخطاء —
-  // في الحالتين، أي 3 على نفس المستوى تنفجر ويرجع اللاعب للأسفل.
-  // ── قاعدة الانفجار: 3+ بلاطات بنفس العرض تنفجر ──
-  // القاعدة blocks[0] ليست بلاطة — نتجاهلها تماماً (لا تُعدّ، لا تُقارن، لا تنفجر).
-  // نعدّ فقط البلاطات الحقيقية (blocks[1] فما فوق) المتتالية بنفس عرض القمة.
+  // ── قاعدة الانفجار الصارمة ──
+  // تنفجر فقط عند 3+ بلاطات حقيقية متتالية لها نفس العرض بالضبط (فرق < 0.5 بكسل).
+  // القاعدة blocks[0] لا تدخل الحساب إطلاقاً (i >= 1).
+  // نستخدم أيضاً GS.streak (يزيد فقط مع perfect متتالية ويُصفّر عند أي خطأ) كشرط ثانٍ:
+  // فلا تنفجر إلا إذا كانت آخر البلاطات perfect متتالية فعلاً، لا مصادفة عرض بعد أخطاء.
   let _matches = 0;
   const _topW = blocks[blocks.length - 1].w;
-  for (let i = blocks.length - 1; i >= 1; i--) {   // i>=1 يتجاهل القاعدة
-    if (Math.abs(blocks[i].w - _topW) < 1.5) _matches++;
+  for (let i = blocks.length - 1; i >= 1; i--) {
+    if (Math.abs(blocks[i].w - _topW) < 0.5) _matches++;
     else break;
   }
-  if (_matches >= 3) {
+  if (_matches >= 3 && GS.streak >= 3) {
     _triggerCleanScreen(_matches);
     try { if (!GS.fever) startFever(); } catch (e) {}
   }
+
 
   if (GS.score > GS.best) { GS.best = GS.score; localStorage.setItem('stack_best', GS.best); }
   updateMission('score', pts);
@@ -2452,6 +2440,8 @@ function _triggerCleanScreen(removeCount) {
   blocks.splice(blocks.length - removeCount, removeCount);
   // تحديث y لكل البلاطات المتبقية بعد الحذف
   blocks.forEach((b, i) => { b.y = gY() - i * BLOCK_H; });
+  // إعادة ضبط موضع البلاطة المتحركة فوراً فوق القمة الجديدة (يمنع ظهورها تحت البرج)
+  if (slider) slider.y = bY(blocks.length);
   GS.streak = 0;
   updateMission('combo_streak', 1);
 
@@ -2527,15 +2517,15 @@ function _triggerCleanScreen(removeCount) {
 function _checkCascadeAfterClear() {
   if (blocks.length < 2) return;
   const topW = blocks[blocks.length - 1].w;
-  if (Math.abs(blocks[blocks.length - 2].w - topW) >= 0.5) return;
 
-  // وجدنا تطابق → احسب كم بلاطة متشابهة العرض من القمة للأسفل
+  // احسب كم بلاطة حقيقية متطابقة العرض من القمة للأسفل (تجاهل القاعدة)
   let removeCount = 0;
   for (let i = blocks.length - 1; i >= 1; i--) {
     if (Math.abs(blocks[i].w - topW) < 0.5) removeCount++;
     else break;
   }
-  if (removeCount < 1) return;
+  // نفس القاعدة: لا ينفجر إلا 3 بلاطات حقيقية أو أكثر
+  if (removeCount < 3) return;
   // لا تزيل القاعدة (index 0)
   removeCount = Math.min(removeCount, blocks.length - 1);
 
