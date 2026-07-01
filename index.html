@@ -2340,13 +2340,21 @@ function tap() {
   if (GS.streak > GS.bestStreak) GS.bestStreak = GS.streak;
   updHUD();
 
-  // ── 3 بلاطات perfect متتالية (نفس المستوى) → تنفجر كلها دفعة وحدة ──
-  // نعتمد على GS.streak مباشرة: يزيد فقط مع الـ perfect المتتالية ويُصفّر عند أي خطأ،
-  // فوصوله 3 يعني بالضبط 3 بلاطات متطابقة المستوى فوق ما تحتها.
-  if (perf && GS.streak >= 3) {
-    // عدد البلاطات المراد تفجيرها = طول السلسلة الحالية (3 أو أكثر)،
-    // لكن نُبقي دائماً بلاطة واحدة على الأقل كقاعدة.
-    const _removeN = Math.min(GS.streak, blocks.length - 1);
+  // ── قاعدة الانفجار: أي 3+ بلاطات فوق بعض بنفس العرض بالضبط تنفجر ──
+  // نحسب من القمة للأسفل عدد البلاطات المتتالية بنفس عرض القمة.
+  // القاعدة (blocks[0]) مستثناة دائماً (لا تُحسب ولا تنفجر).
+  // هذا يشمل حالتين: (أ) perfect متتالية، (ب) بلاطات تصادف نفس العرض بعد أخطاء —
+  // في الحالتين، أي 3 على نفس المستوى تنفجر ويرجع اللاعب للأسفل.
+  let _sameW = 0;
+  if (blocks.length >= 2) {
+    const topW = blocks[blocks.length - 1].w;
+    for (let i = blocks.length - 1; i >= 1; i--) {
+      if (Math.abs(blocks[i].w - topW) < 1.0) _sameW++;
+      else break;
+    }
+  }
+  if (_sameW >= 3) {
+    const _removeN = Math.min(_sameW, blocks.length - 1);
     if (_removeN >= 1) {
       _triggerCleanScreen(_removeN);
       try { if (!GS.fever) startFever(); } catch (e) {}
