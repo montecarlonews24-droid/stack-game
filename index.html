@@ -341,6 +341,7 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
 .gbtn:active{transform:scale(.95);}
 .gbtn-main{background:linear-gradient(135deg,#00ddaa,#0099cc);color:#000;box-shadow:0 0 28px rgba(0,255,204,.4),0 8px 24px rgba(0,0,0,.5);font-size:18px;}
 .gbtn-purple{background:linear-gradient(135deg,var(--c2),#aa00ee);color:#fff;box-shadow:var(--s2),0 8px 24px rgba(0,0,0,.5);}
+.gbtn-gold{background:linear-gradient(135deg,#ffde03,#ff8800);color:#000;box-shadow:0 0 20px rgba(255,222,3,.35),0 8px 24px rgba(0,0,0,.5);}
 .gbtn-yellow{background:linear-gradient(135deg,var(--c3),#ff8800);color:#000;box-shadow:0 0 28px rgba(255,222,3,.4),0 8px 24px rgba(0,0,0,.5);font-size:18px;}
 .gbtn-ghost{background:rgba(255,255,255,.04);color:rgba(255,255,255,.3);border:1px solid rgba(255,255,255,.07);font-size:13px;padding:13px;letter-spacing:2px;}
 .gbtn-ghost::before{display:none;}
@@ -823,6 +824,7 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
     <div id="mistake-btns">
       <button class="gbtn gbtn-purple" id="btn-mistake-ad">🛡️ RESCUE &amp; CONTINUE</button>
       <div id="m-adbar"><div id="m-adbar-t"><div id="m-adbar-f"></div></div><div id="m-adbar-l">Rescuing… <span id="m-adsec">3</span>s</div></div>
+      <button class="gbtn gbtn-gold" id="btn-mistake-coins" style="display:none;">🪙 BUY RESCUE — 30</button>
       <button class="gbtn gbtn-ghost" id="btn-mistake-end">🏁 End Game</button>
     </div>
   </div>
@@ -1262,7 +1264,14 @@ const Shop = {
   isEquipped(id){ return this.getEquipped() === id; },
 
   getSkinColors() {
-    const skin = SKINS.find(s => s.id === this.getEquipped()) || SKINS[0];
+    const equippedId = this.getEquipped();
+    // لو اللاعب ما اختار Skin من المتجر (لسا على CYBER الافتراضي)،
+    // نستخدم ألوان العالم الحالي بدل الافتراضي — كل عالم يصير له هوية بصرية.
+    if (equippedId === 'default') {
+      const w = cw();
+      if (w && w.pal) return w.pal;
+    }
+    const skin = SKINS.find(s => s.id === equippedId) || SKINS[0];
     return skin.colors;
   },
 
@@ -1401,10 +1410,12 @@ const MISSIONS = [
   { id:'m3', ico:'⚡', name:'Speed Run',      desc:'Score 20 points',    target:20,  type:'score',    reward:20 },
   { id:'m4', ico:'💎', name:'Streak King',    desc:'Get 5x Streak',      target:5,   type:'streak',   reward:25 },
   { id:'m5', ico:'🌌', name:'World Explorer', desc:'Unlock SPACE world',  target:15,  type:'best',     reward:30 },
-  { id:'m6', ico:'🪙', name:'Coin Collector', desc:'Earn 50 coins',      target:50,  type:'coins',    reward:0  },
+  { id:'m6', ico:'🪙', name:'Coin Collector', desc:'Earn 50 coins',      target:50,  type:'coins',    reward:20 },
   { id:'m7', ico:'⚡', name:'Combo Master',   desc:'Get 3x Streak 3 times', target:3, type:'combo_streak', reward:40 },
   { id:'m8', ico:'🌍', name:'Traveler',       desc:'Play 5 worlds',      target:5,   type:'worlds',   reward:50 },
 ];
+
+const RESCUE_COIN_COST = 30;
 
 function getMProg(m)   { return parseInt(localStorage.getItem('mp_' + m.id) || '0'); }
 function isMDone(m)    { return getMProg(m) >= m.target; }
@@ -1497,6 +1508,8 @@ function updateMission(type, val) {
         localStorage.setItem('mp_' + m.id, nv);
         if (nv >= m.target && m.reward > 0) {
           Coins.add(m.reward);
+          localStorage.setItem('mp_claimed_' + m.id, m.reward);
+          screenFlash('rgba(255,222,3,0.18)');
         }
       }
     }
@@ -1551,6 +1564,7 @@ function buildMissions() {
   MISSIONS.forEach(m => {
     const prog = getMProg(m), done = prog >= m.target;
     const pct = Math.min(100, Math.round(prog / m.target * 100));
+    const claimed = parseInt(localStorage.getItem('mp_claimed_' + m.id) || '0');
     const el = document.createElement('div');
     el.className = 'mc-row' + (done ? ' done' : '');
     el.innerHTML = `
@@ -1560,7 +1574,7 @@ function buildMissions() {
         <div class="mc-prog-txt">${m.desc} — ${prog}/${m.target}</div>
         ${!done ? `<div class="mc-bar-bg"><div class="mc-bar-f" style="width:${pct}%"></div></div>` : ''}
       </div>
-      ${done ? '<div class="mc-check">✅</div>' : `<div class="mc-pts">🪙${m.reward}</div>`}`;
+      ${done ? `<div class="mc-check">✅ ${claimed > 0 ? `🪙+${claimed}` : ''}</div>` : `<div class="mc-pts">🪙${m.reward}</div>`}`;
     list.appendChild(el);
   });
 }
@@ -2295,6 +2309,7 @@ function tap() {
   if (ovlap <= 0) {
     if (GS.shield) { GS.shield = false; clearPU('shield'); SFX.stack(); Haptic.stack(); dropping = false; newSlider(); return; }
     if (GS.mistakesLeft > 0) { showMistakeOverlay(); return; }
+    if (Coins.get() >= RESCUE_COIN_COST) { showMistakeOverlay(); return; }
     gameOver(); return;
   }
 
@@ -2401,16 +2416,31 @@ function showMistakeOverlay() {
     ringSize: 90
   });
 
+  const freeLivesLeft = GS.mistakesLeft > 0;
+  const adBtn = document.getElementById('btn-mistake-ad');
+  const coinBtn = document.getElementById('btn-mistake-coins');
+
   // Update lives indicator inside the modal
   const lives = document.querySelectorAll('#mistake-lives .life');
   lives.forEach((el, i) => el.classList.toggle('lost', i >= GS.mistakesLeft));
-  const left = GS.mistakesLeft;
-  document.getElementById('mistake-sub').innerHTML =
-    `You have <strong style="color:var(--c3)">${left}</strong> save${left > 1 ? 's' : ''} left.<br>Watch a short ad to keep your tower!`;
 
-  // Reset ad button + bar state
-  const adBtn = document.getElementById('btn-mistake-ad');
-  adBtn.classList.remove('gbtn-dis'); adBtn.textContent = '🛡️ RESCUE & CONTINUE';
+  if (freeLivesLeft) {
+    const left = GS.mistakesLeft;
+    document.getElementById('mistake-sub').innerHTML =
+      `You have <strong style="color:var(--c3)">${left}</strong> save${left > 1 ? 's' : ''} left.<br>Watch a short ad to keep your tower!`;
+    adBtn.style.display = 'flex';
+    adBtn.classList.remove('gbtn-dis'); adBtn.textContent = '🛡️ RESCUE & CONTINUE';
+    coinBtn.style.display = 'none';
+  } else {
+    // Free rescues used up — offer a coin-based rescue instead
+    document.getElementById('mistake-sub').innerHTML =
+      `Out of free saves!<br>Spend <strong style="color:#ffde03">${RESCUE_COIN_COST} 🪙</strong> to keep your tower.`;
+    adBtn.style.display = 'none';
+    coinBtn.style.display = Coins.get() >= RESCUE_COIN_COST ? 'flex' : 'none';
+    coinBtn.classList.remove('gbtn-dis');
+    coinBtn.textContent = `🪙 BUY RESCUE — ${RESCUE_COIN_COST}`;
+  }
+
   document.getElementById('m-adbar').style.display = 'none';
   document.getElementById('m-adbar-f').style.width = '0%';
 
@@ -2992,6 +3022,30 @@ document.getElementById('btn-mistake-end').addEventListener('click', () => {
   gameOver();
 });
 
+// MISTAKE SAVE — pay coins for a rescue once free saves are used up
+document.getElementById('btn-mistake-coins').addEventListener('click', () => {
+  const btn = document.getElementById('btn-mistake-coins');
+  if (btn.classList.contains('gbtn-dis')) return;
+  if (!Coins.spend(RESCUE_COIN_COST)) return;
+  btn.classList.add('gbtn-dis'); btn.textContent = '🛡️ RESCUED!';
+  screenFlash('rgba(255,222,3,0.2)');
+  SFX.powerup(); Haptic.powerup();
+  setTimeout(() => {
+    document.getElementById('mistake-ov').classList.remove('on');
+    dropping = false;
+    // ── RESCUE WIDEN (same as free rescue) ──
+    const top = blocks[blocks.length - 1];
+    const RESCUE_W = Math.min(C.width * .4, 160);
+    if (top.w < RESCUE_W) {
+      const cx = top.x + top.w / 2;
+      let newW = RESCUE_W, newX = cx - newW / 2;
+      newX = Math.max(0, Math.min(newX, C.width - newW));
+      top.x = newX; top.w = newW;
+    }
+    newSlider();
+  }, 350);
+});
+
 // ── INPUT ─────────────────────────────────
 // Start ambient music on the very first user interaction (required by
 // browser autoplay policies) — gives the menu/splash some life too.
@@ -3197,7 +3251,28 @@ const FB = {
   },
 };
 
-// ── PLAYER NAME — auto-generated fallback + lightweight Game Over prompt ──
+// ── FAKE LEADERBOARD BOTS — fills the board so it never looks empty ──
+// These never touch Firebase; they're only merged into the displayed list,
+// and real player scores that outrank them push them down/out naturally.
+const LB_BOTS = [
+  { name:'GHOSTRIDER', score:980, world:'VOLCANO', emoji:'🌋', lv:10 },
+  { name:'NOVA_X',      score:870, world:'VOLCANO', emoji:'🌋', lv:9  },
+  { name:'BLAZE99',     score:740, world:'CRYSTAL', emoji:'💎', lv:9  },
+  { name:'ZEROCOOL',    score:640, world:'CRYSTAL', emoji:'💎', lv:8  },
+  { name:'PIXELQUEEN',  score:560, world:'CRYSTAL', emoji:'💎', lv:8  },
+  { name:'ACE_FALCON',  score:480, world:'SPACE',   emoji:'🌌', lv:7  },
+  { name:'STORMBLADE',  score:410, world:'SPACE',   emoji:'🌌', lv:7  },
+  { name:'NEONWOLF',    score:340, world:'SPACE',   emoji:'🌌', lv:6  },
+  { name:'MYSTICZEN',   score:280, world:'SPACE',   emoji:'🌌', lv:6  },
+  { name:'RAPIDFIRE',   score:220, world:'CYBER',   emoji:'⚡', lv:5  },
+  { name:'SHADOWTAP',   score:170, world:'CYBER',   emoji:'⚡', lv:4  },
+  { name:'LUNARDRIFT',  score:130, world:'CYBER',   emoji:'⚡', lv:4  },
+  { name:'TOWERKID',    score:90,  world:'CYBER',   emoji:'⚡', lv:3  },
+  { name:'STACKY_JOE',  score:55,  world:'CYBER',   emoji:'⚡', lv:2  },
+  { name:'ROOKIE_ONE',  score:25,  world:'CYBER',   emoji:'⚡', lv:1  },
+];
+
+
 // Goal: every real score saved to the leaderboard gets a distinct identity,
 // even if the player never opens the Leaderboard tab to set a custom name.
 function genFallbackName() { return 'PLAYER' + Math.floor(1000 + Math.random() * 9000); }
@@ -3258,14 +3333,12 @@ async function buildLeaderboard() {
   const scores = await FB.fetchScores();
   if (loading) loading.style.display = 'none';
 
-  // إذا فشل الاتصال نعرض رسالة
-  if (!scores.length) {
-    wrap.innerHTML = '<div class="lb-title">🏆 GLOBAL TOP PLAYERS</div><div style="text-align:center;padding:20px;font-size:12px;letter-spacing:2px;color:rgba(255,255,255,.2);">BE THE FIRST TO PLAY! 🚀</div>';
-    return;
-  }
+  // ادمج اللاعبين الوهميين مع النتائج الحقيقية — لو ما في نتائج حقيقية بعد،
+  // نعرض البوتات فقط؛ ولو في لاعبين حقيقيين نديهم مكانهم الطبيعي حسب النقاط.
+  const combined = [...scores, ...LB_BOTS].sort((a, b) => b.score - a.score);
 
   wrap.innerHTML = '<div class="lb-title">🏆 GLOBAL TOP PLAYERS</div>';
-  scores.slice(0, 20).forEach((r, i) => {
+  combined.slice(0, 20).forEach((r, i) => {
     const isYou = savedName && r.name === savedName;
     const rc = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
     const ri = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1;
