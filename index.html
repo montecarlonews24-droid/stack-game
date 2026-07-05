@@ -309,6 +309,9 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
 
 /* ── LEADERBOARD ── */
 #lb-wrap{width:100%;display:flex;flex-direction:column;gap:7px;}
+#lb-mode-tabs{width:100%;display:flex;gap:8px;margin-bottom:10px;}
+.lb-mode-tab{flex:1;font-family:'Black Ops One',monospace;font-size:12px;letter-spacing:2px;padding:11px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:rgba(255,255,255,.35);cursor:pointer;transition:all .2s;}
+.lb-mode-tab.active{border-color:rgba(0,255,204,.35);background:rgba(0,255,204,.06);color:var(--c1);}
 .lb-title{font-family:'Black Ops One',monospace;font-size:17px;letter-spacing:4px;color:rgba(255,255,255,.5);text-align:center;margin-bottom:5px;}
 .lb-row{display:flex;align-items:center;gap:11px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:13px 16px;position:relative;overflow:hidden;}
 .lb-row.you{border-color:rgba(0,255,204,.28);background:rgba(0,255,204,.04);}
@@ -481,10 +484,10 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
     <div class="ob-title">POWER-UPS</div>
     <div class="ob-desc">Collect power-ups during the game to gain advantages!</div>
     <div style="width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <div style="background:rgba(0,255,204,.05);border:1px solid rgba(0,255,204,.15);border-radius:12px;padding:10px;text-align:center;">⏱️<div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.4);margin-top:4px;">SLOW MO</div></div>
-      <div style="background:rgba(255,222,3,.05);border:1px solid rgba(255,222,3,.15);border-radius:12px;padding:10px;text-align:center;">📏<div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.4);margin-top:4px;">WIDER</div></div>
-      <div style="background:rgba(61,159,255,.05);border:1px solid rgba(61,159,255,.15);border-radius:12px;padding:10px;text-align:center;">🛡️<div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.4);margin-top:4px;">SHIELD</div></div>
-      <div style="background:rgba(162,89,255,.05);border:1px solid rgba(162,89,255,.15);border-radius:12px;padding:10px;text-align:center;">×2<div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.4);margin-top:4px;">2X SCORE</div></div>
+      <div style="background:rgba(0,255,204,.05);border:1px solid rgba(0,255,204,.15);border-radius:12px;padding:10px;text-align:center;">⏱️<div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.55);margin-top:4px;">SLOW MO</div><div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px;line-height:1.3;">Blocks slide slower</div></div>
+      <div style="background:rgba(255,222,3,.05);border:1px solid rgba(255,222,3,.15);border-radius:12px;padding:10px;text-align:center;">📏<div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.55);margin-top:4px;">WIDER</div><div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px;line-height:1.3;">Next block is bigger</div></div>
+      <div style="background:rgba(61,159,255,.05);border:1px solid rgba(61,159,255,.15);border-radius:12px;padding:10px;text-align:center;">🛡️<div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.55);margin-top:4px;">SHIELD</div><div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px;line-height:1.3;">Survive one miss</div></div>
+      <div style="background:rgba(162,89,255,.05);border:1px solid rgba(162,89,255,.15);border-radius:12px;padding:10px;text-align:center;">×2<div style="font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.55);margin-top:4px;">2X SCORE</div><div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px;line-height:1.3;">Double points for a bit</div></div>
     </div>
   </div>
   <!-- Slide 4: Worlds & Ranking -->
@@ -682,6 +685,7 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
       <button class="gbtn gbtn-main" id="btn-main">▶ PLAY</button>
       <button class="gbtn" id="btn-continue" style="display:none;background:linear-gradient(135deg,#00cc88,#0088ff);color:#000;font-size:18px;box-shadow:0 0 28px rgba(0,204,136,0.5),0 8px 24px rgba(0,0,0,0.5);">▶ CONTINUE GAME</button>
       <button class="gbtn gbtn-yellow" id="btn-one-more" style="display:none;">🔥 ONE MORE GAME!</button>
+      <button class="gbtn gbtn-ghost" id="btn-share" style="display:none;" onclick="shareScore()">📤 Share Score</button>
       <button class="gbtn gbtn-ghost" id="btn-skip" style="display:none;">↪ Skip — No reward</button>
     </div>
   </div>
@@ -732,6 +736,10 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
       <input id="lb-name-input" type="text" placeholder="Enter your player name…" maxlength="12"/>
       <button id="lb-name-save-btn" onclick="savePlayerName()">SAVE</button>
     </div>
+    <div id="lb-mode-tabs">
+      <button class="lb-mode-tab active" id="lb-tab-weekly" onclick="setLbMode('weekly')">🗓️ WEEKLY</button>
+      <button class="lb-mode-tab" id="lb-tab-alltime" onclick="setLbMode('alltime')">🏆 ALL-TIME</button>
+    </div>
     <div id="lb-loading">⏳ LOADING…</div>
     <div id="lb-wrap"></div>
   </div>
@@ -766,6 +774,8 @@ canvas#ov-cv{position:absolute;inset:0;width:100%;height:100%;}
       <div class="srow"><div class="srow-lbl"><span class="srow-ico">🏆</span>Best Score</div><div style="font-family:'Black Ops One',monospace;font-size:24px;color:var(--c1);" id="set-best">0</div></div>
       <div class="srow"><div class="srow-lbl"><span class="srow-ico">🪙</span>Coins</div><div style="font-family:'Black Ops One',monospace;font-size:24px;color:var(--c3);" id="set-coins">0</div></div>
       <div class="srow" style="cursor:pointer;" onclick="resetBest()"><div class="srow-lbl"><span class="srow-ico">🗑️</span>Reset Best</div><span style="font-size:22px;opacity:.4">›</span></div>
+      <div class="srow" style="cursor:pointer;" onclick="rateApp()"><div class="srow-lbl"><span class="srow-ico">⭐</span>Rate the App</div><span style="font-size:22px;opacity:.4">›</span></div>
+      <div class="srow" style="cursor:pointer;" onclick="shareGame()"><div class="srow-lbl"><span class="srow-ico">📤</span>Share the Game</div><span style="font-size:22px;opacity:.4">›</span></div>
     </div>
 
     <!-- Contact Us -->
@@ -2009,6 +2019,44 @@ function sendContact() {
   }, 1500);
 }
 
+// ── SHARE & RATE ──────────────────────────
+// ⚠️ استبدل PACKAGE_NAME باسم حزمة اللعبة الحقيقي على Google Play قبل الإطلاق.
+const PLAY_PACKAGE = 'com.montecarlo.stacktowerrush';
+const PLAY_URL = 'https://play.google.com/store/apps/details?id=' + PLAY_PACKAGE;
+
+async function shareScore() {
+  const name = getPlayerName();
+  const score = disp(GS.score);
+  const world = cw().name;
+  const text = `🏗️ I scored ${score} in ${world} on STACK! Tower Rush! Can you beat me? 🔥\n${PLAY_URL}`;
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: 'STACK! Tower Rush', text });
+    } else {
+      await navigator.clipboard.writeText(text);
+      screenFlash('rgba(0,255,204,0.14)');
+    }
+    SFX.powerup && SFX.powerup();
+  } catch(e) { /* user cancelled — ignore */ }
+}
+
+async function shareGame() {
+  const text = `🏗️ Check out STACK! Tower Rush — a fast, addictive tower stacking game! 🔥\n${PLAY_URL}`;
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: 'STACK! Tower Rush', text });
+    } else {
+      await navigator.clipboard.writeText(text);
+      screenFlash('rgba(0,255,204,0.14)');
+    }
+  } catch(e) { /* user cancelled — ignore */ }
+}
+
+function rateApp() {
+  // يفتح صفحة اللعبة في متجر Google Play مباشرة
+  window.open(PLAY_URL, '_blank');
+}
+
 
 // ── SOUND ENGINE ──────────────────────────
 const AC = new (window.AudioContext || window.webkitAudioContext)();
@@ -2897,6 +2945,7 @@ function showGameOver() {
   document.getElementById('logo').style.display = 'none';
   document.getElementById('btn-main').textContent = '▶ PLAY AGAIN';
   document.getElementById('btn-one-more').style.display = 'flex';
+  document.getElementById('btn-share').style.display = 'flex';
   document.getElementById('btn-skip').style.display = 'flex';
   showTab('play');
   document.getElementById('ov').classList.remove('gone');
@@ -3272,6 +3321,41 @@ const LB_BOTS = [
   { name:'ROOKIE_ONE',  score:25,  world:'CYBER',   emoji:'⚡', lv:1  },
 ];
 
+// نسخة أسبوعية بنقاط أقل — تعطي اللاعب الجديد أمل واقعي بالمنافسة خلال الأسبوع.
+const LB_BOTS_WEEKLY = [
+  { name:'NOVA_X',      score:340, world:'SPACE',   emoji:'🌌', lv:6 },
+  { name:'BLAZE99',     score:290, world:'SPACE',   emoji:'🌌', lv:6 },
+  { name:'PIXELQUEEN',  score:240, world:'CRYSTAL', emoji:'💎', lv:5 },
+  { name:'STORMBLADE',  score:200, world:'CRYSTAL', emoji:'💎', lv:5 },
+  { name:'NEONWOLF',    score:160, world:'SPACE',   emoji:'🌌', lv:4 },
+  { name:'RAPIDFIRE',   score:125, world:'CYBER',   emoji:'⚡', lv:4 },
+  { name:'SHADOWTAP',   score:95,  world:'CYBER',   emoji:'⚡', lv:3 },
+  { name:'LUNARDRIFT',  score:70,  world:'CYBER',   emoji:'⚡', lv:3 },
+  { name:'TOWERKID',    score:45,  world:'CYBER',   emoji:'⚡', lv:2 },
+  { name:'STACKY_JOE',  score:20,  world:'CYBER',   emoji:'⚡', lv:1 },
+];
+
+let lbMode = 'weekly'; // 'weekly' | 'alltime'
+
+function setLbMode(mode) {
+  lbMode = mode;
+  document.getElementById('lb-tab-weekly').classList.toggle('active', mode === 'weekly');
+  document.getElementById('lb-tab-alltime').classList.toggle('active', mode === 'alltime');
+  buildLeaderboard();
+}
+
+// مفتاح النتيجة الأسبوعية (يتصفّر كل أسبوع تلقائياً حسب رقم الأسبوع)
+function weekKey() {
+  const now = new Date();
+  const oneJan = new Date(now.getFullYear(), 0, 1);
+  const week = Math.ceil((((now - oneJan) / 86400000) + oneJan.getDay() + 1) / 7);
+  return now.getFullYear() + '_' + week;
+}
+function getWeeklyBest() { return parseInt(localStorage.getItem('weekbest_' + weekKey()) || '0'); }
+function setWeeklyBest(s) {
+  if (s > getWeeklyBest()) localStorage.setItem('weekbest_' + weekKey(), s);
+}
+
 
 // Goal: every real score saved to the leaderboard gets a distinct identity,
 // even if the player never opens the Leaderboard tab to set a custom name.
@@ -3330,16 +3414,30 @@ async function buildLeaderboard() {
   if (loading) loading.style.display = 'block';
   wrap.innerHTML = '';
 
-  const scores = await FB.fetchScores();
-  if (loading) loading.style.display = 'none';
+  let combined, title;
 
-  // ادمج اللاعبين الوهميين مع النتائج الحقيقية — لو ما في نتائج حقيقية بعد،
-  // نعرض البوتات فقط؛ ولو في لاعبين حقيقيين نديهم مكانهم الطبيعي حسب النقاط.
-  const combined = [...scores, ...LB_BOTS].sort((a, b) => b.score - a.score);
+  if (lbMode === 'weekly') {
+    // الوضع الأسبوعي: بوتات أقل نقاطاً + أفضل نتيجة أسبوعية للاعب نفسه (محلياً).
+    if (loading) loading.style.display = 'none';
+    const bots = LB_BOTS_WEEKLY.map(b => ({ ...b }));
+    const myWeekly = getWeeklyBest();
+    if (myWeekly > 0 && savedName) {
+      const lv = LevelSys.getCurrentLevel().lv;
+      bots.push({ name: savedName, score: myWeekly, world: cw().name, emoji: cw().emoji, lv, _me: true });
+    }
+    combined = bots.sort((a, b) => b.score - a.score);
+    title = '🗓️ THIS WEEK\'S TOP PLAYERS';
+  } else {
+    // الوضع العام: نتائج Firebase الحقيقية + بوتات all-time.
+    const scores = await FB.fetchScores();
+    if (loading) loading.style.display = 'none';
+    combined = [...scores, ...LB_BOTS].sort((a, b) => b.score - a.score);
+    title = '🏆 GLOBAL TOP PLAYERS';
+  }
 
-  wrap.innerHTML = '<div class="lb-title">🏆 GLOBAL TOP PLAYERS</div>';
+  wrap.innerHTML = `<div class="lb-title">${title}</div>`;
   combined.slice(0, 20).forEach((r, i) => {
-    const isYou = savedName && r.name === savedName;
+    const isYou = r._me || (savedName && r.name === savedName);
     const rc = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
     const ri = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1;
     const wDot = (BASE_WORLDS.find(w => w.name === r.world) || {}).dot || '#333';
@@ -3360,6 +3458,7 @@ async function buildLeaderboard() {
 async function saveGlobalScore(score, worldName, worldEmoji) {
   const name = getPlayerName();
   const lv = LevelSys.getCurrentLevel().lv;
+  setWeeklyBest(score);
   await FB.submitScore(name, score, worldName, worldEmoji, lv);
   buildLeaderboard();
 }
