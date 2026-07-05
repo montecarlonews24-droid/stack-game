@@ -1263,6 +1263,10 @@ const SKINS = [
   { id: 'ghost',   name: 'GHOST', ico: '👻', price: 150, colors: ['rgba(255,255,255,0.4)','rgba(200,200,255,0.3)','rgba(180,180,255,0.5)'] },
   { id: 'rainbow', name: 'RAINBOW',ico:'🌈', price: 200, colors: ['#ff0000','#ff8800','#ffff00','#00ff00','#0088ff','#aa00ff'] },
   { id: 'void',    name: 'VOID',  ico: '🌑', price: 250, colors: ['#222244','#333366','#444488'] },
+  { id: 'toxic',   name: 'TOXIC', ico: '☢️', price: 350, colors: ['#39ff14','#7fff00','#ccff00','#00ff44'] },
+  { id: 'lava',    name: 'LAVA',  ico: '🌋', price: 400, colors: ['#ff2200','#ff5500','#ff8800','#ffaa00','#cc0000'] },
+  { id: 'galaxy',  name: 'GALAXY',ico: '🌌', price: 500, colors: ['#8000ff','#0044ff','#ff00cc','#00ffff','#ffffff'] },
+  { id: 'diamond', name: 'DIAMOND',ico:'💎', price: 650, colors: ['#b9f2ff','#e0ffff','#a0e8ff','#ffffff','#88ddff'] },
 ];
 
 const Shop = {
@@ -2957,6 +2961,19 @@ function showGameOver() {
 }
 
 // ── WORLD SELECT ──────────────────────────
+// يحوّل سرعة العالم إلى مؤشر صعوبة مفهوم (نجوم + كلمة) بدل رقم مجرد.
+function difficultyLabel(speed) {
+  let stars, word, col;
+  if (speed <= 3.5)      { stars = 1; word = 'EASY';    col = '#00ff88'; }
+  else if (speed <= 5)   { stars = 2; word = 'NORMAL';  col = '#00ffcc'; }
+  else if (speed <= 7)   { stars = 3; word = 'HARD';    col = '#ffde03'; }
+  else if (speed <= 9)   { stars = 4; word = 'EXPERT';  col = '#ff8800'; }
+  else                   { stars = 5; word = 'INSANE';  col = '#ff3cac'; }
+  const filled = '★'.repeat(stars);
+  const empty  = '☆'.repeat(5 - stars);
+  return `<span style="color:${col};">${filled}</span><span style="color:rgba(255,255,255,.15);">${empty}</span> <span style="color:${col};font-size:10px;letter-spacing:1px;">${word}</span>`;
+}
+
 function buildWorldGrid() {
   const grid = document.getElementById('world-grid'); grid.innerHTML = '';
   getAllWorlds(GS.best).forEach(w => {
@@ -2966,8 +2983,8 @@ function buildWorldGrid() {
     card.innerHTML = `
       <div class="wcard-ico">${w.emoji}</div>
       <div class="wcard-name" style="color:${w.dot}">${w.name}</div>
-      <div class="wcard-desc">${w.desc}</div>
-      ${w.generated ? `<div class="wcard-gen">GEN ${w.generation}</div>` : ''}
+      <div class="wcard-desc">${w.generated ? ('Gen ' + w.generation) : w.desc}</div>
+      <div style="font-size:13px;margin-top:4px;letter-spacing:1px;">${difficultyLabel(w.speed)}</div>
       ${locked ? `<div class="wcard-lock">🔒</div><div style="font-size:11px;color:rgba(255,255,255,.25);margin-top:3px;">Reach ${w.unlockAt}</div>` : ''}
       <div class="wcard-best">${localStorage.getItem('wb_' + w.id) || '--'}</div>`;
     if (!locked) card.onclick = () => { selectedWorldId = w.id; buildWorldGrid(); };
